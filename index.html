@@ -67,9 +67,18 @@
   .btn{flex:1;border:3px solid #000;border-radius:16px;padding:12px;font:900 15px Nunito,sans-serif;cursor:pointer;box-shadow:0 4px 0 #000}
   .btn:active{transform:translateY(2px);box-shadow:0 2px 0 #000}
   .btn.y{background:var(--yellow);color:#111}.btn.g{background:var(--line);color:var(--text);flex:none;width:52px;border-color:#000}
-  .toast{position:absolute;left:50%;bottom:24px;transform:translate(-50%,120px);background:var(--text);color:#111;font-weight:800;padding:10px 18px;border-radius:20px;transition:transform .3s;z-index:9;white-space:nowrap}
-  .toast.show{transform:translate(-50%,0)}
-  @media(max-width:499px){.statusbar{display:none}}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;pointer-events:none;transition:transform .3s,opacity .3s;background:var(--text);color:#111;font-weight:800;padding:10px 18px;border-radius:20px;transition:transform .3s;z-index:9;white-space:nowrap}
+  .toast.show{transform:translate(-50%,0);opacity:1}
+  @media(max-width:499px){
+    .statusbar{display:none}
+    html,body{height:auto}
+    body{display:block}
+    .phone{height:auto;min-height:100dvh;max-height:none;overflow:visible}
+    .sheet{flex:1 0 auto}
+    .deckArea{flex:none;height:min(430px,56vh);min-height:300px}
+    .sheet{max-height:none;padding-bottom:calc(18px + env(safe-area-inset-bottom))}
+    #live{max-height:30vh}
+  }
   @media(max-height:780px){.emoji{display:none}.sit{font-size:19px}}
 </style>
 </head>
