@@ -189,6 +189,42 @@ textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line)
   .ach .pv{font-size:11px;font-weight:900;color:var(--muted);margin-top:3px}
   .ach.got .pv{color:var(--green)}
 
+
+  .res{text-align:left!important;gap:14px!important}
+  .scoreRow{display:flex;align-items:center;gap:16px}
+  .scoreRing{position:relative;width:110px;height:110px;flex:none}
+  .scoreRing svg{width:100%;height:100%}
+  .scIn{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .scIn b{font-size:34px;line-height:1}.scIn small{font-size:10px;font-weight:900;color:var(--muted);letter-spacing:1px}
+  .stars{display:flex;gap:4px;font-size:30px}
+  .stars span{filter:grayscale(1) opacity(.25);transform:scale(.6);transition:all .35s cubic-bezier(.2,1.8,.4,1)}
+  .stars span.on{filter:drop-shadow(0 3px 0 #000);transform:scale(1)}
+  .scLbl{font-size:18px;margin-top:4px}
+  .sec{display:flex;flex-direction:column;gap:6px}
+  .chk div{display:flex;gap:8px;align-items:center;background:#1d1a33;border:2px solid #000;border-radius:12px;padding:7px 10px;font-weight:800;font-size:14px;opacity:0;transform:translateX(-14px);transition:all .3s}
+  .chk div.in,.gram div.in,.tile.in{opacity:1;transform:none}
+  .chk div.no{color:#ffb4ae}
+  .gram div{background:#1d1a33;border:2px solid #000;border-radius:12px;padding:7px 10px;font-weight:700;font-size:13px;opacity:0;transform:translateX(-14px);transition:all .3s}
+  .gram s{color:#ff8f86;text-decoration-thickness:2px}.gram b{color:var(--green)}
+  .gram .ok{color:var(--green);font-weight:900}
+  .gram .muted{opacity:1;transform:none;background:none;border:0;padding:0}
+  .tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+  .tiles.big{grid-template-columns:repeat(2,1fr)}
+  @media(min-width:640px){.tiles.big{grid-template-columns:repeat(4,1fr)}}
+  .tile{background:#1d1a33;border:2px solid #000;border-radius:14px;padding:9px 10px;opacity:0;transform:translateY(10px);transition:all .35s}
+  .tiles.big .tile{background:var(--glass);border-width:3px;box-shadow:0 4px 0 #000}
+  .tile .v{font-size:22px;font-weight:700}.tile .k{font-size:11px;font-weight:900;color:var(--muted);letter-spacing:.4px}
+  .tile .dl{font-size:11px;font-weight:900}.up{color:var(--green)}.down{color:var(--red)}
+  .charts{display:grid;grid-template-columns:1fr;gap:12px}
+  @media(min-width:760px){.charts{grid-template-columns:1fr 1fr}}
+  .chart svg{width:100%;height:auto;display:block;margin-top:6px;overflow:visible}
+  .chart .ln{fill:none;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round}
+  .chart .ar{opacity:0;transition:opacity .8s .9s}.chart.go .ar{opacity:.22}
+  .chart .pt{opacity:0;transition:opacity .3s}.chart.go .pt{opacity:1}
+  .chart .ax{stroke:#3a3556;stroke-width:1}.chart text{fill:#8f8aad;font:700 10px Nunito,sans-serif}
+  .miniStats{display:flex;gap:14px;flex-wrap:wrap;font-weight:800;font-size:13px;color:var(--muted)}
+  .miniStats b{color:var(--text);font-size:16px}
+
 /* ---- GENİŞ EKRAN ---- */
 @media (min-width:900px){
   #landing .wrap{max-width:980px;display:grid;grid-template-columns:1.1fr 1fr;grid-template-areas:"top top" "hero stats" "hero side";grid-template-rows:auto auto 1fr;gap:22px 34px;align-items:start}
@@ -262,6 +298,11 @@ textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line)
         <div class="achNext" id="achNext"></div>
       </button>
 
+      <button class="panel achLink" id="openStats">
+        <div class="row" style="justify-content:space-between;width:100%"><div class="lbl">📈 İSTATİSTİKLER</div><div class="lbl">▸</div></div>
+        <div class="miniStats" id="miniStats"></div>
+      </button>
+
       <div class="panel muted" style="font-size:13px;font-weight:700">
         Toplam: <b id="totCards">0</b> kart · <b id="totWords">0</b> kelime · En uzun seri: <b id="bestStreak">0</b> gün
       </div>
@@ -286,6 +327,20 @@ textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line)
     </div>
     <div class="achTabs seg" id="achTabs"><button data-f="all" class="on">Hepsi</button><button data-f="got">Açılan</button><button data-f="lock">Kilitli</button></div>
     <div class="achList" id="achList"></div>
+  </div>
+</section>
+
+
+<!-- ===== İSTATİSTİK ===== -->
+<section class="screen" id="stats">
+  <div class="wrap">
+    <div class="row">
+      <button class="iconbtn" id="stBack" aria-label="Geri">←</button>
+      <h2 class="px" style="margin:0;font-size:26px;text-shadow:3px 3px 0 #000">İstatistikler</h2>
+    </div>
+    <div class="tiles big" id="stTiles"></div>
+    <div id="stCharts" class="charts"></div>
+    <div class="panel muted" id="stEmpty" style="font-weight:700;text-align:center;display:none">Henüz veri yok. Birkaç kart tamamla, grafiklerin burada belirsin 📈</div>
   </div>
 </section>
 
@@ -342,11 +397,20 @@ textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line)
 </section>
 
 <!-- ===== MODALLAR ===== -->
-<div class="modal" id="resultModal"><div class="panel">
-  <div class="reward px" id="rXp">+10 XP</div>
+<div class="modal" id="resultModal"><div class="panel res">
+  <div class="scoreRow">
+    <div class="scoreRing"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="none" stroke="#2a2640" stroke-width="10"/>
+      <circle id="scFg" cx="60" cy="60" r="52" fill="none" stroke="#F5D94E" stroke-width="10" stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="326.7" transform="rotate(-90 60 60)"/></svg>
+      <div class="scIn"><b class="px" id="scN">0</b><small>PUAN</small></div></div>
+    <div><div class="stars" id="stars"><span>⭐</span><span>⭐</span><span>⭐</span></div><div class="scLbl px" id="scLbl">Değerlendiriliyor…</div></div>
+  </div>
+  <div class="sec" id="secGoal"><div class="lbl">🎯 HEDEF</div><div class="chk" id="chkList"></div></div>
+  <div class="sec" id="secGram"><div class="lbl">📝 DİLBİLGİSİ</div><div id="gramList" class="gram"><div class="muted">Kontrol ediliyor…</div></div></div>
+  <div class="sec"><div class="lbl">🗣️ AKICILIK</div><div class="tiles" id="tiles"></div></div>
+  <div class="reward px" id="rXp">+0 XP</div>
   <div class="rlist" id="rList"></div>
-  <button class="btn y px" id="rCopy">📋 Claude'a düzelttir</button>
-  <button class="btn" id="rNext">Sonraki kart ▸</button>
+  <div class="row"><button class="btn" id="rStats" style="flex:1">📈</button><button class="btn y px" id="rCopy" style="flex:4">📋 Claude'a düzelttir</button></div>
+  <button class="btn g px" id="rNext">Sonraki kart ▸</button>
 </div></div>
 
 <div class="modal" id="settingsModal"><div class="panel">
@@ -403,13 +467,48 @@ const CARDS = [
   ["Fikir Belirt","En sevdiğin oyunu ya da filmi birine öner.","Ne hakkında olduğunu ve neden sevdiğini anlat.",["It's about...","What makes it special is...","You should definitely check it out."]],
   ["Fikir Belirt","Biri 'Why do you want to live abroad?' diye soruyor.","Nedenlerini ve planını anlat.",["I've always wanted to...","One of the main reasons is...","My plan is to..."]],
 ];
+// Her kart için hedef kontrol listesi: [etiket, regex]. Sıra CARDS ile aynı.
+const POL="(could you|would you|can you|could i|can i|may i|please|excuse me|sorry|would it be possible|i was wondering|do you mind|would you mind|thank)";
+const CHECKS=[
+ /*0 latte*/ [["Yanlış siparişi söyledin","(latte|americano|wrong|mix-?up|mistake|not what i ordered|ordered)"],["Değişim istedin","(change|another|replace|swap|instead|bring me|could i (get|have))"],["Kibar oldun",POL]],
+ /*1 tuzlu*/ [["Sorunu söyledin","(salty|salt)"],["Ne istediğini söyledin","(something else|another|instead|replace|new one|change|less salt|without salt)"],["Kibar oldun",POL]],
+ /*2 rezervasyon*/ [["Rezervasyon istedin","(book|reserv|table)"],["Kişi sayısı","(four|4) (people|persons|of us)|for (four|4)|party of"],["Gün/saat","(tonight|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday|\\d+ ?(pm|am|o'?clock)|at \\d+|(seven|eight|nine|six) (pm|o'?clock)?)"],["Cam kenarı","(window)"]],
+ /*3 hesap*/ [["Hesaptan bahsettin","(bill|check|receipt)"],["Fazladan ürünü söyledin","(didn't order|did not order|not ours|wasn't ours|extra|mistake|by mistake|we never)"],["Kibar oldun",POL]],
+ /*4 kulaklık*/ [["Sorunu anlattın","(doesn't work|does not work|isn't working|not working|broken|only one side|left|right side|no sound)"],["Değişim/iade istedin","(exchange|refund|replace|money back|new one|return)"],["Fiş/zaman bilgisi","(receipt|last week|yesterday|days ago|bought)"]],
+ /*5 ceket*/ [["Beden sordun","(size|small|medium|large|xl|\\bm\\b|\\bl\\b)"],["Stok/renk sordun","(do you have|in stock|another colou?r|other colou?r|in the back|any more)"],["Kibar oldun",POL]],
+ /*6 sipariş*/ [["Siparişten bahsettin","(order|package|parcel)"],["Gelmediğini söyledin","(hasn't arrived|has not arrived|didn't arrive|didn't come|didn't came|haven't received|have not received|not received|still|hasn't come|never (came|arrived)|no information)"],["Süreyi söyledin","(two weeks|2 weeks|14 days|fourteen days|weeks)"],["Ne zaman geleceğini sordun","(when|how long|expect|arrive by|delivery date)"]],
+ /*7 bavul*/ [["Bavulun çıkmadığını söyledin","(luggage|suitcase|bag|baggage)"],["Tarif ettin","(black|blue|red|green|grey|gray|brown|white|big|small|medium|large|sticker|tag|wheels|handle)"],["Ne olacağını sordun","(how long|when|what should|what happens|find it|deliver|contact)"]],
+ /*8 klima*/ [["Sorunu anlattın","(air ?con|ac\\b|a\\.c|air conditioning|not working|isn't working|doesn't work|broken|hot)"],["Oda bilgisi","(room|\\d{2,4})"],["Çözüm istedin","(send|fix|repair|someone|technician|another room|change (my )?room|move)"]],
+ /*9 yol*/ [["Nereye gittiğini söyledin","(looking for|how (do|can) i get|where is|get to|way to|find)"],["Yol tarifini teyit ettin","(so i|you mean|go straight|turn (left|right)|is it far|how far|did you say|left|right)"],["Kibar oldun",POL]],
+ /*10 tren*/ [["Ne olduğunu anlattın","(missed|late|left without)"],["Bilet değişimi sordun","(change|next train|another train|exchange|switch|new ticket)"],["Kibar oldun",POL]],
+ /*11 parti*/ [["Teşekkür ettin","(thank|thanks|appreciate|sweet of you|kind of you)"],["Reddettin","(can't|cannot|won't be able|unable|not going to make|have to pass|i'll pass)"],["Bahane söyledin","(plans|busy|family|work|tired|sick|exam|study|already)"],["Kapıyı açık bıraktın","(next time|another time|rain check|maybe later|let me know)"]],
+ /*12 tanışma*/ [["İşini/okulunu söyledin","(student|study|studying|work|working|job|developer|programmer)"],["Hobini söyledin","(free time|hobby|hobbies|into|like|enjoy|love)"],["Soruyu geri sordun","(what about you|and you|how about you|what do you)"]],
+ /*13 teselli*/ [["Üzüldüğünü söyledin","(sorry|that sucks|that's tough|that's rough|i understand|feel)"],["Moral verdin","(not the end|you'll|you will|next time|it's okay|it's fine|don't worry|happens)"],["Bir şey önerdin","(why don't we|let's|how about|we could|want to|should we|i can help)"]],
+ /*14 bulaşık*/ [["Konuyu açtın","(talk|wanted to|noticed|about the)"],["Sorunu söyledin","(dish|dishes|kitchen|sink|wash)"],["Çözüm önerdin","(how about|take turns|schedule|maybe we|we could|let's|what if)"]],
+ /*15 dizi*/ [["İzlemeni istedin","(you have to|you should|you need to|must watch|give it a)"],["Neden iyi olduğunu söyledin","(because|love|amazing|great|the best|characters|story|plot|acting)"],["İkna cümlesi","(trust me|won't regret|you'll love|promise|guarantee)"]],
+ /*16 geç kalma*/ [["Özür diledin","(sorry|apologi)"],["Sebep söyledin","(traffic|bus|train|held up|because|got stuck|delayed|overslept)"],["Söz verdin","(won't happen|will not happen|make sure|next time)"]],
+ /*17 ödev*/ [["İzin istedin","(could i|can i|would it be possible|i was wondering|may i)"],["Nedenini söyledin","(because|since|had|sick|problem|trouble|issue)"],["Ek süreyi belirttin","(one (more )?day|a day|tomorrow|extra day|extension|late)"],["Teşekkür/rica","(appreciate|thank|please)"]],
+ /*18 tell me*/ [["Eğitimini söyledin","(student|study|studying|degree|university|school|graduate)"],["Becerilerini söyledin","(python|javascript|sql|html|css|c\\b|skills|experience|built|develop)"],["Hedefini söyledin","(goal|want to|hope to|plan|looking for|interested in|future)"]],
+ /*19 zayıflık*/ [["Bir zayıflık söyledin","(weakness|struggle|tend to|sometimes|not good at|working on)"],["Olumlu çevirdin","(improv|working on|learning|started|to deal with|better|practice)"]],
+ /*20 ekip*/ [["Konuyu açtın","(check in|talk|wanted to|noticed|about the project)"],["Hâlini sordun","(is everything okay|are you okay|everything alright|how are you|is something)"],["Plan önerdin","(plan|together|deadline|help|split|figure out|how about|we could)"]],
+ /*21 proje*/ [["Ne yaptığını anlattın","(app|application|website|basically|it lets|it helps|users can)"],["Teknolojileri söyledin","(javascript|html|css|python|react|node|sql|github|api|built (it )?with|using)"],["Neden yaptığını söyledin","(because|idea came|wanted to|problem|reason|why i)"]],
+ /*22 komşu*/ [["Kibar başladın","(sorry to bother|excuse me|sorry|hi|hello)"],["İsteğini söyledin","(turn it down|lower|quieter|volume|music|loud|noise)"],["Sebebini söyledin","(sleep|early|work|tomorrow|late|night|kids)"]],
+ /*23 internet*/ [["Sorunu söyledin","(internet|connection|slow|wifi|wi-fi)"],["Süreyi söyledin","(three days|3 days|days|since)"],["Teknisyen istedin","(technician|send someone|someone (to )?come|check|fix)"]],
+ /*24 doktor*/ [["Şikayetini söyledin","(headache|head hurts|pain|hurts)"],["Süreyi söyledin","(two days|2 days|days|since)"],["Uykudan bahsettin","(sleep|sleeping|can't sleep|insomnia|awake)"]],
+ /*25 ısıtma*/ [["Sorunu söyledin","(heating|heater|radiator|boiler|cold|not working|stopped)"],["Ne zaman sordun","(when|how soon|today|tomorrow|as soon as)"],["Kibar oldun",POL]],
+ /*26 sosyal medya*/ [["Görüşünü söyledin","(i think|in my opinion|personally|i believe|i feel)"],["Sebep verdin","(because|since|the reason|that's why|for example)"],["İki taraf","(on the other hand|but|however|although|while)"]],
+ /*27 üniversite*/ [["Taraf seçtin","(should|shouldn't|i think|i believe|in my opinion|i agree|i disagree)"],["Sebep verdin","(because|since|the main reason|that's why|for example)"],["Karşı görüşe değindin","(some people|others|however|on the other hand|argue)"]],
+ /*28 öneri*/ [["Ne hakkında olduğunu anlattın","(it's about|its about|story|about a|follows)"],["Neden sevdiğini söyledin","(love|because|special|favorite|favourite|amazing|the best)"],["Önerdin","(you should|check it out|you have to|recommend|give it a try)"]],
+ /*29 yurt dışı*/ [["Neden istediğini söyledin","(because|reason|want to|always wanted)"],["Ülke/yer söyledin","(germany|netherlands|holland|england|uk|usa|united states|america|canada|europe|abroad)"],["Planını anlattın","(plan|going to|will|hope to|first|then|apply|job|study)"]],
+];
+
 const META={"Kafe & Restoran":["#F5D94E","☕"],"Alışveriş":["#F0A44B","🛍️"],"Seyahat":["#5F8FD9","✈️"],"Sosyal":["#E8857B","🎉"],"İş & Okul":["#86C46E","💼"],"Sorun Çözme":["#B79CE0","🔧"],"Fikir Belirt":["#5FC3BC","💬"]};
 const $=id=>document.getElementById(id);
 const CATS=[...new Set(CARDS.map(c=>c[0]))];
 
 /* ================= KAYIT (localStorage) ================= */
 const KEY="speakdeck.v2";
-const DEF={xp:0,streak:0,best:0,lastDay:null,freezes:0,days:{},frozenDays:[],badges:[],totalCards:0,totalWords:0,catsDone:[],goal:3,dur:60,prep:15,onboarded:false,maxWords:0};
+const DEF={xp:0,streak:0,best:0,lastDay:null,freezes:0,days:{},frozenDays:[],badges:[],totalCards:0,totalWords:0,catsDone:[],goal:3,dur:60,prep:15,onboarded:false,maxWords:0,sessions:[]};
 let S;
 function load(){try{S=Object.assign({},DEF,JSON.parse(localStorage.getItem(KEY)||"{}"))}catch(e){S=Object.assign({},DEF)}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
@@ -476,9 +575,9 @@ function checkBadges(){const n=[];BADGES.forEach(([id,ic,name,desc,f])=>{const [
 
 /* ================= EKRAN YÖNETİMİ ================= */
 function show(id){document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("on",s.id===id));window.scrollTo(0,0);
-  if(id==="landing")renderLanding(); if(id==="play")renderHud(); if(id==="onboard")requestAnimationFrame(obDots); if(id==="achievements")renderAch();}
+  if(id==="landing")renderLanding(); if(id==="play")renderHud(); if(id==="onboard")requestAnimationFrame(obDots); if(id==="achievements")renderAch(); if(id==="stats")renderStats();}
 function route(){const h=location.hash.slice(1);
-  if(h==="play")show("play"); else if(h==="intro")show("onboard"); else if(h==="achievements")show("achievements"); else show("landing")}
+  if(h==="play")show("play"); else if(h==="intro")show("onboard"); else if(h==="achievements")show("achievements"); else if(h==="stats")show("stats"); else show("landing")}
 addEventListener("hashchange",route);
 function go(h){if(location.hash.slice(1)===h)route();else location.hash=h}
 
@@ -511,6 +610,8 @@ function renderLanding(){
   const nx=lock.map(b=>{const [c,t]=b[4](S);return [b,Math.min(1,c/t),c,t]}).sort((a,b)=>b[1]-a[1])[0];
   $("achNext").textContent=nx?`Sıradaki: ${nx[0][1]} ${nx[0][2]} — ${Math.min(nx[2],nx[3])}/${nx[3]}`:"Hepsini açtın! 🎉";
   $("badgeN").textContent=S.badges.length; $("badgeT").textContent=BADGES.length;
+  {const ss=S.sessions||[],w7=ss.filter(x=>diffDays(x.d,today())<7),a=k=>{const v=avg(w7.map(x=>x[k]));return v==null?"—":Math.round(v)};
+   $("miniStats").innerHTML=ss.length?`<span>Ort. puan <b>${a("sc")}</b></span><span>Kelime/dk <b>${a("wpm")}</b></span><span>Çeşitlilik <b>${a("uniq")}${a("uniq")==="—"?"":"%"}</b></span>`:"Kart tamamladıkça gelişimin burada görünecek";}
   $("totCards").textContent=S.totalCards; $("totWords").textContent=S.totalWords; $("bestStreak").textContent=S.best;
   $("startBtn").textContent=S.totalCards?"▶ DEVAM ET":"▶ BAŞLA";
 }
@@ -600,9 +701,10 @@ function run(sec,col,label,end){total=left=sec;clearInterval(timer);
   const u=()=>{ring(left/total,col);$("status").innerHTML=`${label} <b>${left}s</b>`};u();
   timer=setInterval(()=>{left--;u();if(left<=0){clearInterval(timer);end()}},1000)}
 function startPrep(){if(!S.prep)return startSpeak();phase="prep";$("mic").textContent="⏭";run(S.prep,"#F5D94E","🧠 Düşün…",startSpeak)}
-function startSpeak(){phase="speak";$("mic").classList.add("live");$("mic").textContent="⏹";startMic();run(S.dur,"#E0605A","🎙️ Konuş!",endSpeak)}
+let speakT0=0,speakSecs=0;
+function startSpeak(){speakT0=performance.now();speakSecs=0;phase="speak";$("mic").classList.add("live");$("mic").textContent="⏹";startMic();run(S.dur,"#E0605A","🎙️ Konuş!",endSpeak)}
 function endSpeak(){stopAll();if(words()>=5)complete();else{$("status").innerHTML="Biraz daha konuşmalısın (en az 5 kelime) 🙂";ring(0,"#F5D94E")}}
-function stopAll(){clearInterval(timer);phase="idle";listening=false;if(rec)try{rec.stop()}catch(e){}$("mic").classList.remove("live");$("mic").textContent="🎙️"}
+function stopAll(){if(phase==="speak"&&speakT0)speakSecs+=(performance.now()-speakT0)/1000;speakT0=0;clearInterval(timer);phase="idle";listening=false;if(rec)try{rec.stop()}catch(e){}$("mic").classList.remove("live");$("mic").textContent="🎙️"}
 $("mic").onclick=()=>{if(phase==="idle"){if(completed){toast("Bu kart bitti — sonrakine geç ⏭");return}finalText="";$("live").innerHTML="";updWc();startPrep()}
   else if(phase==="prep"){clearInterval(timer);startSpeak()} else endSpeak()};
 function startMic(){if(!SR){toast("Mikrofon desteklenmiyor — ⌨️ ile yaz");return}
@@ -616,30 +718,150 @@ $("kb").onclick=()=>{const t=$("manual");const on=t.style.display!=="block";t.st
 $("manual").oninput=updWc;
 $("doneBtn").onclick=()=>{if(phase!=="idle")stopAll();if(words()>=5&&!completed)complete()};
 
-/* ================= KART TAMAMLAMA + ÖDÜL ================= */
-function complete(){
+/* ================= DEĞERLENDİRME ================= */
+const FILL_RE=/\b(um+|uh+|uhm+|erm*|hmm+|ah+|eh+)\b/gi;
+function metrics(text,secs){
+  const ws=(text.match(/[A-Za-z']+/g)||[]).map(w=>w.toLowerCase());
+  const n=ws.length,uniq=new Set(ws).size;
+  const sents=text.split(/[.!?]+/).map(x=>x.trim()).filter(x=>(x.match(/[A-Za-z']+/g)||[]).length>=2);
+  return {words:n,uniq:n?Math.round(uniq/n*100):0,avgLen:sents.length?Math.round(n/sents.length*10)/10:n,
+          fill:(text.match(FILL_RE)||[]).length,wpm:secs>8?Math.round(n/(secs/60)):null};
+}
+function runChecks(idx,text){const t=" "+text.toLowerCase().replace(/[’]/g,"'")+" ";return (CHECKS[idx]||[]).map(([l,r])=>[l,new RegExp(r,"i").test(t)])}
+async function grammar(text){
+  try{const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),8000);
+    const r=await fetch("https://api.languagetool.org/v2/check",{method:"POST",body:new URLSearchParams({text,language:"en-US"}),signal:ctl.signal});
+    clearTimeout(to);if(!r.ok)throw 0;const j=await r.json();
+    return j.matches.filter(m=>{const c=(m.rule&&m.rule.category&&m.rule.category.id)||"";
+      return !/TYPOGRAPHY|PUNCTUATION|CASING|TYPOS_OTHER/.test(c)&&!/UPPERCASE_SENTENCE_START|WHITESPACE|COMMA|PUNCT|EN_QUOTES|SENTENCE_FRAGMENT/.test(m.rule.id)})
+      .map(m=>({bad:text.substr(m.offset,m.length),fix:(m.replacements[0]||{}).value||"",msg:m.shortMessage||m.message}));
+  }catch(e){return null}
+}
+function score(chk,gram,m){
+  const goalS=chk.length?chk.filter(c=>c[1]).length/chk.length:1;
+  const parts=[];if(m.wpm!=null)parts.push(Math.min(1,m.wpm/100));
+  parts.push(Math.min(1,m.uniq/65));parts.push(Math.max(0,1-m.fill/Math.max(1,m.words/15)));
+  const fluS=parts.reduce((a,b)=>a+b,0)/parts.length;
+  const gramS=gram==null?null:Math.max(0,1-gram.length/Math.max(1,m.words/10));
+  const t=gramS==null?goalS*.6+fluS*.4:goalS*.5+gramS*.25+fluS*.25;
+  return Math.round(t*100);
+}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function countUp(el,to,ms,suffix=""){const t0=performance.now();return new Promise(res=>{(function f(){const k=Math.min(1,(performance.now()-t0)/ms);
+  el.textContent=Math.round(to*(1-Math.pow(1-k,3)))+suffix;if(k<1)requestAnimationFrame(f);else res()})()})}
+function esc(t){return t.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+
+let lastAnswer="";
+async function complete(){
   completed=true;updWc();
-  const w=words(), before=levelInfo(S.xp).l;
-  let xp=10, lines=[];
-  const wb=Math.min(15,Math.floor(w/8)); if(wb){xp+=wb;lines.push(`🗣️ ${w} kelime → +${wb} bonus XP`)}
+  const text=(finalText+" "+$("manual").value).trim();lastAnswer=text;
+  const idx=order[pos%order.length], m=metrics(text,speakSecs), chk=runChecks(idx,text);
+  // modal: başlangıç durumu
+  $("scN").textContent="0";$("scFg").style.transition="none";$("scFg").style.strokeDashoffset=326.7;
+  [...$("stars").children].forEach(x=>x.classList.remove("on"));$("scLbl").textContent="Değerlendiriliyor…";
+  $("chkList").innerHTML="";$("gramList").innerHTML='<div class="muted in">Kontrol ediliyor…</div>';$("tiles").innerHTML="";
+  $("rXp").textContent="";$("rList").innerHTML="";$("rNext").disabled=true;
+  $("status").innerHTML="✅ Tamamlandı!";ring(1,"#6CC36A");
+  $("resultModal").classList.add("on");$("resultModal").querySelector(".panel").scrollTop=0;
+  const gramP=grammar(text);
+
+  // 1) hedef kontrol listesi
+  for(const [l,ok] of chk){const d=document.createElement("div");d.className=ok?"":"no";d.innerHTML=(ok?"✅ ":"❌ ")+l;$("chkList").appendChild(d);await sleep(60);d.classList.add("in");await sleep(170)}
+  if(!chk.length)$("secGoal").style.display="none";else $("secGoal").style.display="";
+
+  // 2) akıcılık kutuları
+  const tiles=[[m.wpm,"KELİME/DK",m.wpm==null?"yazılı":""],[m.uniq,"ÇEŞİTLİLİK","%"],[m.fill,"DOLGU (um, uh)",""],[m.avgLen,"ORT. CÜMLE",""]];
+  for(const [v,k,suf] of tiles){const d=document.createElement("div");d.className="tile";
+    d.innerHTML=`<div class="v px">${v==null?"—":"0"}</div><div class="k">${k}</div>`;$("tiles").appendChild(d);await sleep(40);d.classList.add("in");
+    if(v!=null){const el=d.querySelector(".v");if(Number.isInteger(v))countUp(el,v,600,suf==="%"?"%":"");else el.textContent=v}await sleep(120)}
+
+  // 3) dilbilgisi
+  const gram=await gramP;
+  $("gramList").innerHTML="";
+  if(gram==null){$("gramList").innerHTML='<div class="muted in">Dilbilgisi kontrolüne ulaşılamadı (internet?). Puan hedef + akıcılıktan hesaplandı.</div>'}
+  else if(!gram.length){const d=document.createElement("div");d.innerHTML='<span class="ok">✨ Dilbilgisi hatası bulunamadı!</span>';$("gramList").appendChild(d);await sleep(40);d.classList.add("in")}
+  else for(const g of gram.slice(0,5)){const d=document.createElement("div");
+    d.innerHTML=`<s>${esc(g.bad)}</s>${g.fix?` → <b>${esc(g.fix)}</b>`:""}<div class="muted" style="font-size:12px;margin-top:2px">${esc(g.msg)}</div>`;
+    $("gramList").appendChild(d);await sleep(40);d.classList.add("in");await sleep(150)}
+
+  // 4) toplam puan + yıldızlar
+  const sc=score(chk,gram,m), stars=sc>=85?3:sc>=65?2:sc>=40?1:0;
+  $("scFg").style.transition="stroke-dashoffset 1.1s cubic-bezier(.2,.8,.3,1)";$("scFg").style.stroke=sc>=85?"#6CC36A":sc>=65?"#F5D94E":"#F0A44B";
+  requestAnimationFrame(()=>$("scFg").style.strokeDashoffset=326.7*(1-sc/100));
+  await countUp($("scN"),sc,1100);
+  for(let i=0;i<stars;i++){$("stars").children[i].classList.add("on");await sleep(220)}
+  $("scLbl").textContent=["Isınmaya devam 💪","İyi başlangıç 👍","Çok iyi! 🔥","Mükemmel! 🏆"][stars];
+
+  // 5) XP + seri + rozet
+  const before=levelInfo(S.xp).l, lines=[];
+  let xp=5+Math.round(sc/5);
   const first=registerDay();
-  if(first){xp+=5;lines.unshift(S.streak>1?`🔥 Seri devam: ${S.streak} gün! (+5 XP)`:`🔥 Seri başladı: 1 gün! (+5 XP)`)}
-  const td=S.days[today()];
-  if(td===S.goal){xp+=20;lines.push("🎯 Günlük hedef tamam! +20 XP")}
+  if(first){xp+=5;lines.push(S.streak>1?`🔥 Seri devam: ${S.streak} gün! (+5 XP)`:`🔥 Seri başladı: 1 gün! (+5 XP)`)}
+  if(S.days[today()]===S.goal){xp+=20;lines.push("🎯 Günlük hedef tamam! +20 XP")}
   if(S._newFreeze){lines.push("🧊 7 günlük seri ödülü: 1 dondurucu kazandın!");delete S._newFreeze}
-  S.xp+=xp;S.totalCards++;S.totalWords+=w;S.maxWords=Math.max(S.maxWords,w);
+  S.xp+=xp;S.totalCards++;S.totalWords+=m.words;S.maxWords=Math.max(S.maxWords,m.words);
   if(!S.catsDone.includes(cur()[0]))S.catsDone.push(cur()[0]);
-  const after=levelInfo(S.xp).l; if(after>before)lines.push(`⭐ SEVİYE ATLADIN: Sv. ${after}!`);
+  S.sessions.push({d:today(),sc,wpm:m.wpm,uniq:m.uniq,fill:m.fill,len:m.avgLen,w:m.words,g:gram==null?null:gram.length});
+  if(S.sessions.length>300)S.sessions=S.sessions.slice(-300);
+  const after=levelInfo(S.xp).l;if(after>before)lines.push(`⭐ SEVİYE ATLADIN: Sv. ${after}!`);
   checkBadges().forEach(b=>lines.push("🏅 Yeni rozet: "+b));
   save();renderHud();
-  $("rXp").textContent=`+${xp} XP`;$("rList").innerHTML=lines.map(l=>`<div>${l}</div>`).join("")||"<div>Güzel iş! 👏</div>";
-  $("status").innerHTML="✅ Tamamlandı!";ring(1,"#6CC36A");
-  setTimeout(()=>{$("resultModal").classList.add("on");if(first||after>before)confetti()},350);
+  await countUp($("rXp"),xp,700);$("rXp").textContent=`+${xp} XP`;
+  for(const l of lines){const d=document.createElement("div");d.textContent=l;$("rList").appendChild(d);await sleep(120)}
+  $("rNext").disabled=false;
+  if(first||after>before||stars===3)confetti();
 }
 $("rNext").onclick=()=>{$("resultModal").classList.remove("on");swipe(1)};
+$("rStats").onclick=()=>{$("resultModal").classList.remove("on");go("stats")};
+
+/* ================= İSTATİSTİK SAYFASI ================= */
+function avg(a){a=a.filter(v=>v!=null);return a.length?a.reduce((x,y)=>x+y,0)/a.length:null}
+function chartSVG(vals,color,title,unit,inv){
+  const pts=vals.map((v,i)=>[i,v]).filter(p=>p[1]!=null);
+  if(pts.length<2)return `<div class="panel chart"><div class="lbl">${title}</div><div class="muted" style="font-weight:700;font-size:13px;margin-top:8px">Grafik için en az 2 kart gerekli.</div></div>`;
+  const W=320,H=130,pl=28,pr=8,pt=10,pb=18,max=Math.max(...pts.map(p=>p[1]))*1.15||1,min=0,n=vals.length;
+  const X=i=>pl+(W-pl-pr)*(n===1?0:i/(n-1)),Y=v=>pt+(H-pt-pb)*(1-(v-min)/(max-min));
+  const d=pts.map((p,k)=>(k?"L":"M")+X(p[0]).toFixed(1)+" "+Y(p[1]).toFixed(1)).join(" ");
+  const area=d+` L${X(pts[pts.length-1][0]).toFixed(1)} ${H-pb} L${X(pts[0][0]).toFixed(1)} ${H-pb} Z`;
+  const last=pts[pts.length-1][1],firstV=pts[0][1],delta=Math.round(last-firstV);
+  return `<div class="panel chart"><div class="row" style="justify-content:space-between"><div class="lbl">${title}</div>
+    <div class="lbl" style="color:${(inv?delta<=0:delta>=0)?"var(--green)":"var(--red)"}">${delta>=0?"▲":"▼"} ${Math.abs(delta)}${unit}</div></div>
+    <svg viewBox="0 0 ${W} ${H}">
+      <line class="ax" x1="${pl}" y1="${H-pb}" x2="${W-pr}" y2="${H-pb}"/><line class="ax" x1="${pl}" y1="${pt}" x2="${pl}" y2="${H-pb}"/>
+      <text x="2" y="${pt+8}">${Math.round(max)}</text><text x="2" y="${H-pb}">0</text>
+      <text x="${pl}" y="${H-3}">ilk</text><text x="${W-pr-22}" y="${H-3}">son</text>
+      <path class="ar" d="${area}" fill="${color}"/>
+      <path class="ln" d="${d}" stroke="${color}"/>
+      ${pts.map(p=>`<circle class="pt" cx="${X(p[0]).toFixed(1)}" cy="${Y(p[1]).toFixed(1)}" r="3.5" fill="${color}" stroke="#000" stroke-width="1.5"/>`).join("")}
+    </svg></div>`;
+}
+function renderStats(){
+  const ss=S.sessions||[],last=ss.slice(-30);
+  $("stEmpty").style.display=ss.length?"none":"block";
+  const w7=ss.filter(x=>diffDays(x.d,today())<7),p7=ss.filter(x=>{const g=diffDays(x.d,today());return g>=7&&g<14});
+  const T=[["sc","ORT. PUAN",""],["wpm","KELİME/DK",""],["uniq","ÇEŞİTLİLİK","%"],["fill","DOLGU/KART",""]];
+  $("stTiles").innerHTML=T.map(([k,lbl,suf])=>{const a=avg(w7.map(x=>x[k])),b=avg(p7.map(x=>x[k]));
+    const dl=(a!=null&&b!=null)?Math.round(a-b):null,good=k==="fill"?dl<=0:dl>=0;
+    return `<div class="tile"><div class="v px" data-v="${a==null?"":Math.round(a*(k==="fill"?10:1))/(k==="fill"?10:1)}" data-s="${suf}">${a==null?"—":"0"}</div><div class="k">${lbl} · 7 GÜN</div>
+      ${dl!=null?`<div class="dl ${good?"up":"down"}">${dl>=0?"▲":"▼"} ${Math.abs(dl)}${suf} geçen haftaya göre</div>`:""}</div>`}).join("");
+  requestAnimationFrame(()=>[...$("stTiles").children].forEach((t,i)=>setTimeout(()=>{t.classList.add("in");const v=t.querySelector(".v");
+    if(v.dataset.v!==""){const n=+v.dataset.v;if(Number.isInteger(n))countUp(v,n,700,v.dataset.s);else v.textContent=n+v.dataset.s}},i*90)));
+  $("stCharts").innerHTML=ss.length?[
+    chartSVG(last.map(x=>x.sc),"#F5D94E","🏆 PUAN",""),
+    chartSVG(last.map(x=>x.wpm),"#5F8FD9","🗣️ DAKİKADA KELİME",""),
+    chartSVG(last.map(x=>x.uniq),"#6CC36A","🌈 KELİME ÇEŞİTLİLİĞİ","%"),
+    chartSVG(last.map(x=>x.fill),"#E0605A","😶 DOLGU SÖZCÜKLERİ (az = iyi)","",true),
+  ].join(""):"";
+  // çizgi çizme animasyonu
+  requestAnimationFrame(()=>document.querySelectorAll("#stCharts .chart").forEach((c,i)=>{const ln=c.querySelector(".ln");if(!ln)return;
+    const L=ln.getTotalLength();ln.style.strokeDasharray=L;ln.style.strokeDashoffset=L;ln.getBoundingClientRect();
+    ln.style.transition=`stroke-dashoffset 1.2s ${i*.15}s cubic-bezier(.3,.8,.3,1)`;ln.style.strokeDashoffset=0;c.classList.add("go")}));
+}
+$("stBack").onclick=()=>history.length>1?history.back():go("landing");
+$("openStats").onclick=()=>go("stats");
 
 /* ================= CLAUDE'A KOPYALA ================= */
-function copyPrompt(){const a=(finalText+" "+$("manual").value).trim(),c=cur();if(!a){toast("Önce cevap ver 🙂");return}
+function copyPrompt(){const a=((finalText+" "+$("manual").value).trim())||lastAnswer,c=cur();if(!a){toast("Önce cevap ver 🙂");return}
   const p=`İngilizce konuşma pratiği yapıyorum. Aşağıda bir durum kartı ve benim cevabım var${finalText?" (konuşmamdan otomatik yazıya döküldü, noktalama hataları sistemden olabilir)":""}.
 
 Durum: ${c[1]}
