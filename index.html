@@ -5,16 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>Speak Deck</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#101116; --phone:#17181f; --surface:#22242d; --line:#2e313c;
+    --bg:#0b0a14; --phone:rgba(14,12,26,.35); --surface:#22242d; --line:#2e313c;
     --text:#f1f1f4; --muted:#9a9cab; --yellow:#F5D94E; --red:#CF5A50; --blue:#385B95; --green:#538A46; --orange:#E6B155; --purple:#7B5EA7; --teal:#3E8E8A;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{margin:0;height:100%;background:var(--bg);font-family:Nunito,system-ui,sans-serif;color:var(--text)}
+  html{background:var(--bg)}
+  html,body{margin:0;height:100%;overflow-x:hidden;font-family:Nunito,system-ui,sans-serif;color:var(--text)}
   body{display:flex;justify-content:center;align-items:center}
-  .phone{width:100%;max-width:400px;height:100dvh;max-height:860px;background:var(--phone);display:flex;flex-direction:column;position:relative;overflow:hidden}
+  .phone{z-index:1;width:100%;max-width:400px;height:100dvh;max-height:860px;background:var(--phone);display:flex;flex-direction:column;position:relative;overflow:hidden}
   @media(min-width:500px){.phone{border-radius:42px;border:10px solid #000;box-shadow:0 30px 80px rgba(0,0,0,.6);height:820px}}
   .statusbar{display:flex;justify-content:space-between;padding:12px 26px 0;font-size:13px;font-weight:800}
   header{display:flex;justify-content:space-between;align-items:center;padding:14px 22px 6px}
@@ -80,9 +81,35 @@
     #live{max-height:30vh}
   }
   @media(max-height:780px){.emoji{display:none}.sit{font-size:19px}}
+
+  #bg{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;image-rendering:pixelated;display:block}
+  .crt{position:fixed;inset:0;z-index:50;pointer-events:none;
+    background:repeating-linear-gradient(0deg,rgba(0,0,0,.07) 0 1px,transparent 1px 3px),
+               radial-gradient(ellipse at center,transparent 60%,rgba(0,0,0,.45) 100%);
+    mix-blend-mode:multiply}
+  .logo,.catTag,.chip,.streak,.btn,.status b,.sheet .lbl{font-family:"Pixelify Sans",Nunito,sans-serif;letter-spacing:.5px}
+  .logo{font-size:30px;text-shadow:3px 3px 0 #000}
+  .logo span{color:var(--yellow)}
+  .chip{background:rgba(20,18,36,.7);backdrop-filter:blur(4px)}
+  .streak{background:rgba(20,18,36,.75);border:2px solid #000;box-shadow:0 3px 0 #000}
+  .side{background:rgba(20,18,36,.75);border:3px solid #000;box-shadow:0 4px 0 #000}
+  .status{color:#d9d6ee;text-shadow:2px 2px 0 #000}
+  .sheet{background:rgba(22,20,40,.88);backdrop-filter:blur(6px);border-top:3px solid #000}
+  .float{width:100%;height:100%;animation:bob 3.2s ease-in-out infinite}
+  .card.behind1 .float{animation-delay:-1.1s}.card.behind2 .float{animation-delay:-2.2s}
+  @keyframes bob{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-6px) rotate(1.2deg)}}
+  .card.top.enter{animation:pop .45s cubic-bezier(.2,1.6,.4,1)}
+  @keyframes pop{0%{transform:scale(.7) rotate(-8deg);opacity:0}100%{transform:none;opacity:1}}
+  .face.front::after{content:"";position:absolute;inset:0;border-radius:25px;pointer-events:none;
+    background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.35) 45%,transparent 60%);
+    background-size:250% 100%;animation:shine 4.5s ease-in-out infinite}
+  @keyframes shine{0%,60%{background-position:120% 0}100%{background-position:-60% 0}}
+  .sit{text-shadow:0 1px 0 rgba(255,255,255,.35)}
+  @media (prefers-reduced-motion:reduce){.float,.face.front::after{animation:none}}
 </style>
 </head>
 <body>
+<canvas id="bg"></canvas><div class="crt"></div>
 <div class="phone">
   <div class="statusbar"><span id="clock">22:20</span><span>📶 🔋</span></div>
   <header>
@@ -178,7 +205,7 @@ function shuffle(){
 
 function cardHTML(i,cls){
   const [c,sit,goal,hints]=CARDS[i];const [col,emo]=META[c];
-  return `<div class="card ${cls}" data-i="${i}"><div class="inner">
+  return `<div class="card ${cls}" data-i="${i}"><div class="float"><div class="inner">
     <div class="face front" style="background:${col}">
       <span class="catTag">${c.toUpperCase()}</span>
       <div class="emoji">${emo}</div>
@@ -190,13 +217,13 @@ function cardHTML(i,cls){
       <h3>💡 İşine yarayabilecek kalıplar</h3>
       ${hints.map(h=>`<div class="h">${h}</div>`).join("")}
       <div class="tapHint" style="margin-top:auto">önce kendin dene 😉 · dokun → geri</div>
-    </div></div></div>`;
+    </div></div></div></div>`;
 }
 
 function render(){
   const n=order.length, idx=k=>order[(pos+k)%n];
   $("deck").innerHTML=(n>2?cardHTML(idx(2),"behind2"):"")+(n>1?cardHTML(idx(1),"behind1"):"")+cardHTML(idx(0),"top");
-  bindDrag(document.querySelector(".card.top"));
+  const tc=document.querySelector(".card.top");tc.classList.add("enter");setTimeout(()=>tc.classList.remove("enter"),500);bindDrag(tc);
   resetRound();
 }
 function current(){return CARDS[order[pos%order.length]]}
@@ -268,6 +295,45 @@ Lütfen:
 4. Bu durumda kullanabileceğim 3 faydalı kalıp ver`;
   navigator.clipboard.writeText(p).then(()=>toast("Kopyalandı ✓ Claude'a yapıştır"),()=>{$("manual").style.display="block";$("manual").value=p;toast("Elle kopyala")});
 };
+
+
+// ---- Akan boya arka planı (WebGL) ----
+(function(){
+  const cv=$("bg"), gl=cv.getContext("webgl");
+  if(!gl){cv.style.background="radial-gradient(circle at 30% 30%,#2b1d5c,#0b0a14)";return}
+  const vs=`attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}`;
+  const fs=`precision mediump float;uniform float t;uniform vec2 r;
+  vec3 c1=vec3(.10,.42,.45), c2=vec3(.42,.16,.52), c3=vec3(.96,.72,.25);
+  void main(){
+    vec2 uv=(gl_FragCoord.xy-.5*r)/min(r.x,r.y);
+    float pix=1.;
+    float a=atan(uv.y,uv.x), d=length(uv);
+    a+= .9*sin(d*3.-t*.25) + t*.06;           // girdap
+    vec2 q=vec2(cos(a),sin(a))*d*2.6;
+    for(int i=1;i<5;i++){                     // boya bükme
+      float fi=float(i);
+      q+=vec2(.6/fi*sin(fi*q.y+t*.35+.3*fi), .6/fi*cos(fi*q.x-t*.3+.5*fi));
+    }
+    float v=.5+.5*sin(q.x+q.y);
+    float w=.5+.5*sin(q.x*1.7-q.y*.9+t*.2);
+    vec3 col=mix(c1,c2,smoothstep(.15,.85,v));
+    col=mix(col,c3,smoothstep(.78,.98,w)*.55);
+    col*= .55+.45*smoothstep(1.6,.2,d);       // kenarlar koyu
+    col=floor(col*10.)/10.;                   // retro renk basamakları
+    gl_FragColor=vec4(col,1.);
+  }`;
+  function sh(type,src){const o=gl.createShader(type);gl.shaderSource(o,src);gl.compileShader(o);return o}
+  const pr=gl.createProgram();gl.attachShader(pr,sh(gl.VERTEX_SHADER,vs));gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,fs));gl.linkProgram(pr);gl.useProgram(pr);
+  const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+  const loc=gl.getAttribLocation(pr,"p");gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
+  const ut=gl.getUniformLocation(pr,"t"), ur=gl.getUniformLocation(pr,"r");
+  const SCALE=5; // düşük çözünürlük = piksel görünüm + telefonda hafif
+  function size(){cv.width=Math.ceil(innerWidth/SCALE);cv.height=Math.ceil(innerHeight/SCALE);gl.viewport(0,0,cv.width,cv.height);gl.uniform2f(ur,cv.width,cv.height)}
+  size();addEventListener("resize",size);
+  const still=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const t0=performance.now();
+  (function loop(){gl.uniform1f(ut,(performance.now()-t0)/1000);gl.drawArrays(gl.TRIANGLE_STRIP,0,4);if(!still&&!document.hidden||still===false)requestAnimationFrame(loop)})();
+})();
 
 shuffle();
 </script>
