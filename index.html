@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Speak Deck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#101116; --phone:#17181f; --surface:#22242d; --line:#2e313c;
+    --text:#f1f1f4; --muted:#9a9cab; --yellow:#F5D94E; --red:#CF5A50; --blue:#385B95; --green:#538A46; --orange:#E6B155; --purple:#7B5EA7; --teal:#3E8E8A;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;background:var(--bg);font-family:Nunito,system-ui,sans-serif;color:var(--text)}
+  body{display:flex;justify-content:center;align-items:center}
+  .phone{width:100%;max-width:400px;height:100%;max-height:860px;background:var(--phone);display:flex;flex-direction:column;position:relative;overflow:hidden}
+  @media(min-width:500px){.phone{border-radius:42px;border:10px solid #000;box-shadow:0 30px 80px rgba(0,0,0,.6);height:820px}}
+  .statusbar{display:flex;justify-content:space-between;padding:12px 26px 0;font-size:13px;font-weight:800}
+  header{display:flex;justify-content:space-between;align-items:center;padding:14px 22px 6px}
+  .logo{font-size:24px;font-weight:900;letter-spacing:-.5px}
+  .logo span{color:var(--yellow)}
+  .streak{background:var(--surface);border-radius:20px;padding:6px 12px;font-weight:800;font-size:14px}
+  .chips{display:flex;gap:8px;overflow-x:auto;padding:10px 22px 4px;scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{flex:none;border:2px solid var(--line);background:transparent;color:var(--muted);border-radius:20px;padding:7px 14px;font:700 13px Nunito,sans-serif;cursor:pointer}
+  .chip.on{background:var(--text);color:#111;border-color:var(--text)}
+
+  .deckArea{flex:1;position:relative;display:flex;justify-content:center;align-items:center;min-height:300px;perspective:1200px}
+  .card{position:absolute;width:80%;height:80%;max-height:370px;border-radius:28px;border:3px solid #000;box-shadow:0 8px 0 #000;transition:transform .35s cubic-bezier(.2,.8,.3,1.2),opacity .3s;touch-action:none;user-select:none;cursor:grab}
+  .card .inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .5s}
+  .card.flipped .inner{transform:rotateY(180deg)}
+  .face{position:absolute;inset:0;backface-visibility:hidden;border-radius:25px;padding:22px;display:flex;flex-direction:column}
+  .back{transform:rotateY(180deg);background:#fffaf0;color:#1a1a1a}
+  .front{color:#111}
+  .catTag{align-self:flex-start;background:rgba(0,0,0,.85);color:#fff;font-weight:800;font-size:12px;border-radius:12px;padding:5px 11px;letter-spacing:.3px}
+  .emoji{font-size:42px;margin:10px 0 2px}
+  .sit{font-size:20px;margin-bottom:12px;font-weight:900;line-height:1.3}
+  .goal{margin-top:auto;background:rgba(255,255,255,.55);border:2px solid #000;border-radius:16px;padding:10px 12px;font-weight:700;font-size:14px}
+  .tapHint{text-align:center;font-size:12px;font-weight:800;opacity:.6;margin-top:10px}
+  .back h3{margin:0 0 10px;font-size:16px}
+  .back .h{background:#fff;border:2px solid #000;border-radius:12px;padding:8px 10px;margin-bottom:8px;font-weight:700;font-size:14px}
+  .card.behind1{transform:translate(-14px,10px) scale(.96) rotate(-6deg)}
+  .card.behind2{transform:translate(16px,16px) scale(.92) rotate(7deg)}
+  .card.behind1,.card.behind2{pointer-events:none}
+  .card.gone{opacity:0}
+
+  .controls{padding:6px 22px 10px;display:flex;align-items:center;justify-content:space-between}
+  .side{width:54px;height:54px;border-radius:50%;background:var(--surface);border:0;color:var(--text);font-size:22px;cursor:pointer}
+  .micWrap{position:relative;width:96px;height:96px}
+  .micWrap svg{position:absolute;inset:0;transform:rotate(-90deg)}
+  .mic{position:absolute;inset:9px;border-radius:50%;border:3px solid #000;background:var(--yellow);font-size:32px;cursor:pointer;box-shadow:0 5px 0 #000;transition:transform .1s}
+  .mic:active{transform:translateY(3px);box-shadow:0 2px 0 #000}
+  .mic.live{background:var(--red);animation:pulse 1.2s infinite}
+  @keyframes pulse{50%{box-shadow:0 5px 0 #000,0 0 0 10px rgba(207,90,80,.25)}}
+  .status{text-align:center;font-weight:800;font-size:14px;color:var(--muted);min-height:20px}
+  .status b{color:var(--text);font-size:18px}
+
+  .sheet{background:var(--surface);border-radius:26px 26px 0 0;padding:14px 20px 18px;max-height:34%;display:flex;flex-direction:column;transition:max-height .3s}
+  .grab{width:40px;height:5px;background:var(--line);border-radius:3px;margin:0 auto 10px}
+  .sheet .lbl{font-size:12px;font-weight:800;color:var(--muted);letter-spacing:.5px}
+  #live{flex:1;overflow:auto;font-size:16px;font-weight:600;line-height:1.5;margin:6px 0 10px;min-height:44px}
+  #live .interim{color:var(--muted)}
+  #live:empty::before{content:"Konuşmaya başlayınca burada görünecek…";color:var(--muted);font-weight:500}
+  textarea{display:none;width:100%;background:var(--phone);border:2px solid var(--line);color:var(--text);border-radius:12px;padding:10px;font:600 15px Nunito,sans-serif;resize:none;height:70px;margin-bottom:10px}
+  .sheet .row{display:flex;gap:8px}
+  .btn{flex:1;border:3px solid #000;border-radius:16px;padding:12px;font:900 15px Nunito,sans-serif;cursor:pointer;box-shadow:0 4px 0 #000}
+  .btn:active{transform:translateY(2px);box-shadow:0 2px 0 #000}
+  .btn.y{background:var(--yellow);color:#111}.btn.g{background:var(--line);color:var(--text);flex:none;width:52px;border-color:#000}
+  .toast{position:absolute;left:50%;bottom:24px;transform:translate(-50%,120px);background:var(--text);color:#111;font-weight:800;padding:10px 18px;border-radius:20px;transition:transform .3s;z-index:9;white-space:nowrap}
+  .toast.show{transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="statusbar"><span id="clock">22:20</span><span>📶 🔋</span></div>
+  <header>
+    <div class="logo">Speak<span>Deck</span></div>
+    <div class="streak">🔥 <span id="count">0</span> kart</div>
+  </header>
+  <div class="chips" id="chips"></div>
+
+  <div class="deckArea" id="deck"></div>
+
+  <div class="status" id="status">Kartı kaydır ↔ · Dokun = ipucu</div>
+  <div class="controls">
+    <button class="side" id="prev" title="Önceki">↩</button>
+    <div class="micWrap">
+      <svg viewBox="0 0 96 96"><circle cx="48" cy="48" r="45" fill="none" stroke="#2e313c" stroke-width="6"/>
+        <circle id="ring" cx="48" cy="48" r="45" fill="none" stroke="#F5D94E" stroke-width="6" stroke-linecap="round" stroke-dasharray="282.7" stroke-dashoffset="282.7"/></svg>
+      <button class="mic" id="mic">🎙️</button>
+    </div>
+    <button class="side" id="next" title="Sonraki">⏭</button>
+  </div>
+
+  <div class="sheet">
+    <div class="grab"></div>
+    <div class="lbl">SÖYLEDİĞİN</div>
+    <div id="live"></div>
+    <textarea id="manual" placeholder="Mikrofon yoksa buraya yaz…"></textarea>
+    <div class="row">
+      <button class="btn g" id="kb" title="Yazarak cevapla">⌨️</button>
+      <button class="btn y" id="copy">📋 Claude'a gönder</button>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+const CARDS = [
+  // [kategori, durum, hedef, ipuçları]
+  ["Kafe & Restoran","Kafede yanlış sipariş geldi: latte istemiştin, americano gelmiş.","Garsona kibarca söyle ve değiştirmesini iste.",["Excuse me, I think there's been a mix-up.","I actually ordered a...","Would you mind changing it?"]],
+  ["Kafe & Restoran","Restoranda yemeğin çok tuzlu.","Durumu kaba olmadan anlat, ne istediğini söyle.",["I'm sorry, but this is a bit too salty for me.","Could I get something else instead?"]],
+  ["Kafe & Restoran","4 kişilik masa için rezervasyon yapmak istiyorsun, telefondasın.","Gün, saat, kişi sayısını ver; bir de cam kenarı iste.",["I'd like to book a table for...","Is there any chance we could sit by the window?"]],
+  ["Kafe & Restoran","Hesap geldi ama içinde sipariş etmediğin bir şey var.","Fark ettiğini nazikçe söyle.",["I think there's a mistake on the bill.","We didn't order the..."]],
+  ["Alışveriş","Aldığın kulaklığın bir tarafı çalışmıyor, mağazaya geri götürdün.","Sorunu anlat ve değişim ya da iade iste.",["I bought these last week and...","Could I exchange them or get a refund?","I still have the receipt."]],
+  ["Alışveriş","Mağazada beğendiğin bir ceketin senin bedenini bulamıyorsun.","Görevliye sor, başka renk/beden var mı öğren.",["Do you have this in a medium?","Is there any more in the back?"]],
+  ["Alışveriş","İnternetten verdiğin sipariş 2 haftadır gelmedi, müşteri hizmetlerini aradın.","Sorunu anlat, ne zaman geleceğini sor.",["I placed an order two weeks ago and...","Could you check what's going on?"]],
+  ["Seyahat","Havaalanında bavulun çıkmadı.","Görevliye durumu anlat, bavulunu tarif et.",["My luggage didn't arrive.","It's a medium-sized black suitcase with...","How long will it take to find it?"]],
+  ["Seyahat","Otelde odanın kliması çalışmıyor.","Resepsiyonu ara, sorunu anlat, çözüm iste.",["The air conditioning in my room isn't working.","Could you send someone up, or move me to another room?"]],
+  ["Seyahat","Yabancı bir şehirde kayboldun, birine yol soruyorsun.","Nereye gitmek istediğini söyle ve yol tarifini teyit et.",["Sorry to bother you, could you tell me how to get to...?","So I go straight and then turn left?"]],
+  ["Seyahat","Trenini kaçırdın, gişedesin.","Ne olduğunu anlat, bir sonraki trene bilet değiştirebilir misin sor.",["I just missed my train.","Is it possible to change my ticket to the next one?"]],
+  ["Sosyal","Arkadaşın seni hafta sonu partiye çağırıyor ama gitmek istemiyorsun.","Kırmadan kibarca reddet, bir bahane uydur.",["Thanks so much for inviting me, but...","I've already got plans.","Maybe next time?"]],
+  ["Sosyal","Yeni tanıştığın biri sana ne iş yaptığını ve hobilerini soruyor.","Kendini 4-5 cümleyle tanıt.",["I'm currently studying...","In my free time I'm really into...","What about you?"]],
+  ["Sosyal","Bir arkadaşın sınavdan kaldı ve morali bozuk.","Onu teselli et, bir şey öner.",["I'm really sorry to hear that.","It's not the end of the world.","Why don't we...?"]],
+  ["Sosyal","Ev arkadaşın sürekli bulaşıkları yıkamıyor.","Kavga çıkarmadan konuyu aç ve bir çözüm öner.",["Hey, can we talk about something?","I've noticed that...","How about we take turns?"]],
+  ["Sosyal","Bir arkadaşın en sevdiğin diziyi izlemediğini söyledi.","Onu izlemeye ikna et, neden iyi olduğunu anlat.",["You have to watch it!","What I love about it is...","Trust me, you won't regret it."]],
+  ["İş & Okul","Bir toplantıya 15 dakika geç kaldın.","Özür dile, kısa bir açıklama yap.",["Sorry I'm late,","I got held up by...","It won't happen again."]],
+  ["İş & Okul","Hocana ödevi bir gün geç teslim etmek için izin istiyorsun.","Nedenini açıkla, kibarca rica et.",["I was wondering if I could...","I've had some trouble with...","I'd really appreciate it."]],
+  ["İş & Okul","İş görüşmesindesin: 'Tell me about yourself.' dediler.","Eğitimini, becerilerini ve hedefini 1 dakikada anlat.",["I'm a computer programming student...","I've been working with...","I'm really interested in..."]],
+  ["İş & Okul","İş görüşmesinde 'What's your biggest weakness?' diye soruldu.","Dürüst ama olumlu bir cevap ver.",["One thing I'm working on is...","To deal with that, I've started..."]],
+  ["İş & Okul","Ekip arkadaşın projedeki kendi kısmını yapmıyor.","Onunla konuşup durumu çözmeye çalış.",["I wanted to check in about...","Is everything okay?","Can we figure out a plan together?"]],
+  ["İş & Okul","Bir yabancı yazılımcıya kendi projeni (bir web uygulaması) anlatıyorsun.","Ne yaptığını, hangi teknolojileri kullandığını, neden yaptığını anlat.",["It's basically an app that...","I built it with...","The idea came from..."]],
+  ["Sorun Çözme","Komşunun müziği gece 2'de hâlâ çok yüksek.","Kapısını çal, kibar ama net ol.",["Sorry to bother you this late,","Would you mind turning it down a bit?","I have to get up early."]],
+  ["Sorun Çözme","İnternetin 3 gündür çok yavaş, servis sağlayıcıyı aradın.","Sorunu açıkla ve teknisyen iste.",["My internet has been really slow for...","I've already tried restarting the router.","Could you send a technician?"]],
+  ["Sorun Çözme","Doktora gittin: 2 gündür başın ağrıyor ve uyuyamıyorsun.","Şikayetini anlat, ne zamandır sürdüğünü söyle.",["I've had a headache for...","It gets worse when...","I haven't been sleeping well."]],
+  ["Sorun Çözme","Kiraladığın evin ısıtması bozuldu, ev sahibini arıyorsun.","Sorunu anlat ve ne zaman tamir edileceğini sor.",["The heating stopped working.","It's getting really cold.","When could someone come and fix it?"]],
+  ["Fikir Belirt","Biri sana 'Is social media good or bad?' diye soruyor.","Görüşünü söyle, 2 sebep ver.",["Personally, I think...","On the one hand... on the other hand...","That's why I believe..."]],
+  ["Fikir Belirt","'Should university be free?' sorusuna cevap ver.","Bir taraf seç ve savun.",["In my opinion,","The main reason is...","Some people argue that..., but..."]],
+  ["Fikir Belirt","En sevdiğin oyunu ya da filmi birine öner.","Ne hakkında olduğunu ve neden sevdiğini anlat.",["It's about...","What makes it special is...","You should definitely check it out."]],
+  ["Fikir Belirt","Biri 'Why do you want to live abroad?' diye soruyor.","Nedenlerini ve planını anlat.",["I've always wanted to...","One of the main reasons is...","My plan is to..."]],
+];
+const META = {
+  "Kafe & Restoran":["#F5D94E","☕"], "Alışveriş":["#E6B155","🛍️"], "Seyahat":["#5F8FD9","✈️"],
+  "Sosyal":["#E07A6F","🎉"], "İş & Okul":["#7FB069","💼"], "Sorun Çözme":["#B79CE0","🔧"], "Fikir Belirt":["#5FC3BC","💬"]
+};
+const $=id=>document.getElementById(id);
+let cat="Hepsi", order=[], pos=0, history=[], done=0;
+let phase="idle", timerId=null, total=0, left=0, rec=null, listening=false, finalText="";
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+const C=282.7;
+
+function toast(t){$("toast").textContent=t;$("toast").classList.add("show");setTimeout(()=>$("toast").classList.remove("show"),1800)}
+function clock(){const d=new Date();$("clock").textContent=d.getHours()+":"+String(d.getMinutes()).padStart(2,"0")}
+clock();setInterval(clock,30000);
+
+const cats=["Hepsi",...new Set(CARDS.map(c=>c[0]))];
+$("chips").innerHTML=cats.map(c=>`<button class="chip ${c==="Hepsi"?"on":""}" data-c="${c}">${META[c]?META[c][1]+" ":""}${c}</button>`).join("");
+$("chips").onclick=e=>{const b=e.target.closest(".chip");if(!b)return;cat=b.dataset.c;
+  document.querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x===b));shuffle();};
+
+function shuffle(){
+  order=CARDS.map((c,i)=>i).filter(i=>cat==="Hepsi"||CARDS[i][0]===cat);
+  for(let i=order.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]]}
+  pos=0;history=[];render();
+}
+
+function cardHTML(i,cls){
+  const [c,sit,goal,hints]=CARDS[i];const [col,emo]=META[c];
+  return `<div class="card ${cls}" data-i="${i}"><div class="inner">
+    <div class="face front" style="background:${col}">
+      <span class="catTag">${c.toUpperCase()}</span>
+      <div class="emoji">${emo}</div>
+      <div class="sit">${sit}</div>
+      <div class="goal">🎯 ${goal}</div>
+      <div class="tapHint">dokun → ipucu kalıplar</div>
+    </div>
+    <div class="face back">
+      <h3>💡 İşine yarayabilecek kalıplar</h3>
+      ${hints.map(h=>`<div class="h">${h}</div>`).join("")}
+      <div class="tapHint" style="margin-top:auto">önce kendin dene 😉 · dokun → geri</div>
+    </div></div></div>`;
+}
+
+function render(){
+  const n=order.length, idx=k=>order[(pos+k)%n];
+  $("deck").innerHTML=(n>2?cardHTML(idx(2),"behind2"):"")+(n>1?cardHTML(idx(1),"behind1"):"")+cardHTML(idx(0),"top");
+  bindDrag(document.querySelector(".card.top"));
+  resetRound();
+}
+function current(){return CARDS[order[pos%order.length]]}
+
+function bindDrag(el){
+  let sx=0,dx=0,down=false,moved=false;
+  el.onpointerdown=e=>{down=true;moved=false;sx=e.clientX;dx=0;el.style.transition="none";el.setPointerCapture(e.pointerId)};
+  el.onpointermove=e=>{if(!down)return;dx=e.clientX-sx;if(Math.abs(dx)>6)moved=true;
+    el.style.transform=`translateX(${dx}px) rotate(${dx/18}deg)`};
+  el.onpointerup=()=>{if(!down)return;down=false;el.style.transition="";
+    if(Math.abs(dx)>90){swipe(dx>0?1:-1)}else{el.style.transform="";if(!moved)el.classList.toggle("flipped")}};
+}
+
+function swipe(dir){
+  if(phase!=="idle")stopAll();
+  const top=document.querySelector(".card.top");
+  top.style.transform=`translateX(${dir*500}px) rotate(${dir*30}deg)`;top.classList.add("gone");
+  history.push(pos);pos=(pos+1)%order.length;setTimeout(render,250);
+}
+$("next").onclick=()=>swipe(1);
+$("prev").onclick=()=>{if(!history.length){toast("Geri gidecek kart yok");return}if(phase!=="idle")stopAll();pos=history.pop();render()};
+
+function setRing(frac,color){$("ring").style.strokeDashoffset=C*(1-frac);$("ring").style.stroke=color}
+function resetRound(){finalText="";$("live").innerHTML="";$("manual").value="";setRing(0,"#F5D94E");
+  $("status").innerHTML="Kartı kaydır ↔ · Dokun = ipucu · 🎙️ = başla";$("mic").classList.remove("live");$("mic").textContent="🎙️"}
+
+function run(sec,color,label,onEnd){
+  total=left=sec;clearInterval(timerId);
+  const upd=()=>{setRing(left/total,color);$("status").innerHTML=`${label} <b>${left}s</b>`};upd();
+  timerId=setInterval(()=>{left--;upd();if(left<=0){clearInterval(timerId);onEnd()}},1000);
+}
+function startPrep(){phase="prep";$("mic").textContent="⏭";run(15,"#F5D94E","🧠 Düşün…",startSpeak)}
+function startSpeak(){phase="speak";$("mic").classList.add("live");$("mic").textContent="⏹";startMic();run(60,"#CF5A50","🎙️ Konuş!",finish)}
+function finish(){stopAll();done++;$("count").textContent=done;
+  $("status").innerHTML="✅ Bitti! Metni kontrol et → <b style='font-size:14px'>Claude'a gönder</b>";setRing(1,"#538A46")}
+function stopAll(){clearInterval(timerId);phase="idle";listening=false;if(rec)try{rec.stop()}catch(_){}
+  $("mic").classList.remove("live");$("mic").textContent="🎙️"}
+
+$("mic").onclick=()=>{if(phase==="idle"){finalText="";$("live").innerHTML="";startPrep()}else if(phase==="prep"){clearInterval(timerId);startSpeak()}else finish()};
+
+function startMic(){
+  if(!SR){toast("Mikrofon desteklenmiyor — ⌨️ ile yaz");return}
+  rec=new SR();rec.lang="en-US";rec.interimResults=true;rec.continuous=true;
+  rec.onresult=e=>{let it="";for(let k=e.resultIndex;k<e.results.length;k++){const r=e.results[k];
+    if(r.isFinal)finalText+=r[0].transcript.trim()+". ";else it+=r[0].transcript}
+    $("live").innerHTML=finalText+`<span class="interim">${it}</span>`;$("live").scrollTop=1e9};
+  rec.onerror=e=>{if(e.error==="not-allowed")toast("Mikrofon izni ver 🎙️");else if(e.error==="network")toast("İnternet gerekli")};
+  rec.onend=()=>{if(listening)try{rec.start()}catch(_){}};
+  listening=true;rec.start();
+}
+
+$("kb").onclick=()=>{const t=$("manual");t.style.display=t.style.display==="block"?"none":"block";if(t.style.display==="block")t.focus()};
+
+$("copy").onclick=()=>{
+  const a=(finalText+" "+$("manual").value).trim();const c=current();
+  if(!a){toast("Önce cevap ver 🙂");return}
+  const p=`İngilizce konuşma pratiği yapıyorum. Aşağıda bir durum kartı ve benim cevabım var${finalText?" (konuşmamdan otomatik yazıya döküldü, noktalama hataları sistemden olabilir)":""}.
+
+Durum: ${c[1]}
+Hedef: ${c[2]}
+
+Benim cevabım:
+"${a}"
+
+Lütfen:
+1. Dilbilgisi ve kelime hatalarımı göster (kısaca neden yanlış olduğunu Türkçe açıkla)
+2. Doğal olmayan kısımları bir native'in nasıl söyleyeceğiyle değiştir
+3. Cevabımın düzeltilmiş tam hâlini yaz
+4. Bu durumda kullanabileceğim 3 faydalı kalıp ver`;
+  navigator.clipboard.writeText(p).then(()=>toast("Kopyalandı ✓ Claude'a yapıştır"),()=>{$("manual").style.display="block";$("manual").value=p;toast("Elle kopyala")});
+};
+
+shuffle();
+</script>
+</body>
+</html>
