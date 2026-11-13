@@ -256,8 +256,30 @@ textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line)
 
 
   .catBtn{position:relative}
-  .catGrid{flex-wrap:wrap;overflow:visible;justify-content:center;gap:10px;padding:4px 0}
-  .catGrid .chip{font-size:15px;padding:10px 14px}
+  .catPanel{text-align:left!important;gap:10px!important;max-width:440px!important}
+  .catHead{display:flex;align-items:center;justify-content:space-between}
+  .xBtn{width:36px;height:36px;border-radius:50%;border:3px solid #000;background:var(--glass2);color:var(--text);font-weight:900;box-shadow:0 3px 0 #000}
+  .secT{display:flex;justify-content:space-between;align-items:center;font-weight:900;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+  .linkBtn{background:none;border:0;color:var(--yellow);font-weight:900;font-size:13px;text-transform:none;letter-spacing:0;padding:4px}
+  .ctiles{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .ctile{position:relative;overflow:hidden;display:flex;align-items:center;gap:8px;text-align:left;border:3px solid #000;border-radius:14px;padding:9px 10px 12px;background:var(--glass2);color:var(--muted);box-shadow:0 3px 0 #000;transition:transform .1s,background .15s}
+  .ctile:active{transform:translateY(2px);box-shadow:0 1px 0 #000}
+  .ctile .te{font-size:22px;flex:none;filter:grayscale(.7);opacity:.7}
+  .ctile .tn{font-weight:900;font-size:13.5px;line-height:1.15;flex:1}
+  .ctile .tp{font-size:11.5px;font-weight:800;opacity:.85;flex:none}
+  .ctile i{position:absolute;left:0;bottom:0;height:4px;background:var(--c);opacity:.9}
+  .ctile.on{background:var(--c);color:#111}.ctile.on .te{filter:none;opacity:1}.ctile.on i{background:#111;opacity:.35}
+  .diffRow{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .dbtn{border:3px solid #000;border-radius:14px;padding:9px 4px;background:var(--glass2);color:var(--muted);font-weight:900;font-size:13.5px;box-shadow:0 3px 0 #000;display:flex;flex-direction:column;align-items:center;gap:2px}
+  .dbtn small{font-size:11px;opacity:.8}.dbtn .dots{letter-spacing:2px;font-size:11px}
+  .dbtn.on{background:var(--c);color:#111}
+  .freshT{display:flex;align-items:center;gap:10px;font-weight:800;font-size:14px;padding:4px 2px;cursor:pointer}
+  .freshT input{width:20px;height:20px;accent-color:var(--green)}
+  #catPlay:disabled{opacity:.5;filter:grayscale(1)}
+  .diffTag{position:absolute;top:clamp(16px,4.5vw,22px);right:clamp(16px,4.5vw,22px);background:#111;color:#fff;font-size:11px;font-weight:900;border-radius:12px;padding:5px 9px;display:flex;gap:5px;align-items:center}
+  .diffTag b{width:8px;height:8px;border-radius:50%;background:#555;display:inline-block}
+  .doneTag{position:absolute;bottom:clamp(14px,4vw,20px);right:clamp(16px,4.5vw,22px);font-size:11px;font-weight:900;background:rgba(0,0,0,.18);border-radius:10px;padding:3px 8px}
+  .catBadge{position:absolute;top:-6px;right:-6px;background:var(--yellow);color:#111;border:2px solid #000;border-radius:10px;font-size:10px;font-weight:900;padding:1px 5px;line-height:1.3}
 
 
   .avatarBtn{font-size:22px}
@@ -499,10 +521,14 @@ textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line)
   <button class="btn g px" id="rNext">Sonraki kart ▸</button>
 </div></div>
 
-<div class="modal" id="catModal"><div class="panel">
-  <h3 class="px" style="margin:0">🗂️ Kategori seç</h3>
-  <div class="chips catGrid" id="chips"></div>
-  <button class="btn" id="catClose">Kapat</button>
+<div class="modal" id="catModal"><div class="panel catPanel">
+  <div class="catHead"><h3 class="px" style="margin:0">🗂️ Desteni kur</h3><button class="xBtn" id="catClose" aria-label="Kapat">✕</button></div>
+  <div class="secT"><span>Kategoriler</span><button class="linkBtn" id="catAll">Hepsi</button></div>
+  <div class="ctiles" id="catTiles"></div>
+  <div class="secT"><span>Zorluk</span></div>
+  <div class="diffRow" id="diffRow"></div>
+  <label class="freshT"><input type="checkbox" id="freshOnly"><span>Sadece henüz yapmadıklarım</span></label>
+  <button class="btn g px" id="catPlay">Oyna</button>
 </div></div>
 
 <div class="modal" id="settingsModal"><div class="panel">
@@ -528,36 +554,59 @@ textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line)
 <script>
 const CARDS = [
   // [kategori, durum, hedef, ipuçları]
-  ["Kafe & Restoran","Kafede yanlış sipariş geldi: latte istemiştin, americano gelmiş.","Garsona kibarca söyle ve değiştirmesini iste.",["Excuse me, I think there's been a mix-up.","I actually ordered a...","Would you mind changing it?"]],
-  ["Kafe & Restoran","Restoranda yemeğin çok tuzlu.","Durumu kaba olmadan anlat, ne istediğini söyle.",["I'm sorry, but this is a bit too salty for me.","Could I get something else instead?"]],
-  ["Kafe & Restoran","4 kişilik masa için rezervasyon yapmak istiyorsun, telefondasın.","Gün, saat, kişi sayısını ver; bir de cam kenarı iste.",["I'd like to book a table for...","Is there any chance we could sit by the window?"]],
-  ["Kafe & Restoran","Hesap geldi ama içinde sipariş etmediğin bir şey var.","Fark ettiğini nazikçe söyle.",["I think there's a mistake on the bill.","We didn't order the..."]],
-  ["Alışveriş","Aldığın kulaklığın bir tarafı çalışmıyor, mağazaya geri götürdün.","Sorunu anlat ve değişim ya da iade iste.",["I bought these last week and...","Could I exchange them or get a refund?","I still have the receipt."]],
-  ["Alışveriş","Mağazada beğendiğin bir ceketin senin bedenini bulamıyorsun.","Görevliye sor, başka renk/beden var mı öğren.",["Do you have this in a medium?","Is there any more in the back?"]],
-  ["Alışveriş","İnternetten verdiğin sipariş 2 haftadır gelmedi, müşteri hizmetlerini aradın.","Sorunu anlat, ne zaman geleceğini sor.",["I placed an order two weeks ago and...","Could you check what's going on?"]],
-  ["Seyahat","Havaalanında bavulun çıkmadı.","Görevliye durumu anlat, bavulunu tarif et.",["My luggage didn't arrive.","It's a medium-sized black suitcase with...","How long will it take to find it?"]],
-  ["Seyahat","Otelde odanın kliması çalışmıyor.","Resepsiyonu ara, sorunu anlat, çözüm iste.",["The air conditioning in my room isn't working.","Could you send someone up, or move me to another room?"]],
-  ["Seyahat","Yabancı bir şehirde kayboldun, birine yol soruyorsun.","Nereye gitmek istediğini söyle ve yol tarifini teyit et.",["Sorry to bother you, could you tell me how to get to...?","So I go straight and then turn left?"]],
-  ["Seyahat","Trenini kaçırdın, gişedesin.","Ne olduğunu anlat, bir sonraki trene bilet değiştirebilir misin sor.",["I just missed my train.","Is it possible to change my ticket to the next one?"]],
-  ["Sosyal","Arkadaşın seni hafta sonu partiye çağırıyor ama gitmek istemiyorsun.","Kırmadan kibarca reddet, bir bahane uydur.",["Thanks so much for inviting me, but...","I've already got plans.","Maybe next time?"]],
-  ["Sosyal","Yeni tanıştığın biri sana ne iş yaptığını ve hobilerini soruyor.","Kendini 4-5 cümleyle tanıt.",["I'm currently studying...","In my free time I'm really into...","What about you?"]],
-  ["Sosyal","Bir arkadaşın sınavdan kaldı ve morali bozuk.","Onu teselli et, bir şey öner.",["I'm really sorry to hear that.","It's not the end of the world.","Why don't we...?"]],
-  ["Sosyal","Ev arkadaşın sürekli bulaşıkları yıkamıyor.","Kavga çıkarmadan konuyu aç ve bir çözüm öner.",["Hey, can we talk about something?","I've noticed that...","How about we take turns?"]],
-  ["Sosyal","Bir arkadaşın en sevdiğin diziyi izlemediğini söyledi.","Onu izlemeye ikna et, neden iyi olduğunu anlat.",["You have to watch it!","What I love about it is...","Trust me, you won't regret it."]],
-  ["İş & Okul","Bir toplantıya 15 dakika geç kaldın.","Özür dile, kısa bir açıklama yap.",["Sorry I'm late,","I got held up by...","It won't happen again."]],
-  ["İş & Okul","Hocana ödevi bir gün geç teslim etmek için izin istiyorsun.","Nedenini açıkla, kibarca rica et.",["I was wondering if I could...","I've had some trouble with...","I'd really appreciate it."]],
-  ["İş & Okul","İş görüşmesindesin: 'Tell me about yourself.' dediler.","Eğitimini, becerilerini ve hedefini 1 dakikada anlat.",["I'm a computer programming student...","I've been working with...","I'm really interested in..."]],
-  ["İş & Okul","İş görüşmesinde 'What's your biggest weakness?' diye soruldu.","Dürüst ama olumlu bir cevap ver.",["One thing I'm working on is...","To deal with that, I've started..."]],
-  ["İş & Okul","Ekip arkadaşın projedeki kendi kısmını yapmıyor.","Onunla konuşup durumu çözmeye çalış.",["I wanted to check in about...","Is everything okay?","Can we figure out a plan together?"]],
-  ["İş & Okul","Bir yabancı yazılımcıya kendi projeni (bir web uygulaması) anlatıyorsun.","Ne yaptığını, hangi teknolojileri kullandığını, neden yaptığını anlat.",["It's basically an app that...","I built it with...","The idea came from..."]],
-  ["Sorun Çözme","Komşunun müziği gece 2'de hâlâ çok yüksek.","Kapısını çal, kibar ama net ol.",["Sorry to bother you this late,","Would you mind turning it down a bit?","I have to get up early."]],
-  ["Sorun Çözme","İnternetin 3 gündür çok yavaş, servis sağlayıcıyı aradın.","Sorunu açıkla ve teknisyen iste.",["My internet has been really slow for...","I've already tried restarting the router.","Could you send a technician?"]],
-  ["Sorun Çözme","Doktora gittin: 2 gündür başın ağrıyor ve uyuyamıyorsun.","Şikayetini anlat, ne zamandır sürdüğünü söyle.",["I've had a headache for...","It gets worse when...","I haven't been sleeping well."]],
-  ["Sorun Çözme","Kiraladığın evin ısıtması bozuldu, ev sahibini arıyorsun.","Sorunu anlat ve ne zaman tamir edileceğini sor.",["The heating stopped working.","It's getting really cold.","When could someone come and fix it?"]],
-  ["Fikir Belirt","Biri sana 'Is social media good or bad?' diye soruyor.","Görüşünü söyle, 2 sebep ver.",["Personally, I think...","On the one hand... on the other hand...","That's why I believe..."]],
-  ["Fikir Belirt","'Should university be free?' sorusuna cevap ver.","Bir taraf seç ve savun.",["In my opinion,","The main reason is...","Some people argue that..., but..."]],
-  ["Fikir Belirt","En sevdiğin oyunu ya da filmi birine öner.","Ne hakkında olduğunu ve neden sevdiğini anlat.",["It's about...","What makes it special is...","You should definitely check it out."]],
-  ["Fikir Belirt","Biri 'Why do you want to live abroad?' diye soruyor.","Nedenlerini ve planını anlat.",["I've always wanted to...","One of the main reasons is...","My plan is to..."]],
+  ["Kafe & Restoran","Kafede yanlış sipariş geldi: latte istemiştin, americano gelmiş.","Garsona kibarca söyle ve değiştirmesini iste.",["Excuse me, I think there's been a mix-up.","I actually ordered a...","Would you mind changing it?"],1],
+  ["Kafe & Restoran","Restoranda yemeğin çok tuzlu.","Durumu kaba olmadan anlat, ne istediğini söyle.",["I'm sorry, but this is a bit too salty for me.","Could I get something else instead?"],1],
+  ["Kafe & Restoran","4 kişilik masa için rezervasyon yapmak istiyorsun, telefondasın.","Gün, saat, kişi sayısını ver; bir de cam kenarı iste.",["I'd like to book a table for...","Is there any chance we could sit by the window?"],2],
+  ["Kafe & Restoran","Hesap geldi ama içinde sipariş etmediğin bir şey var.","Fark ettiğini nazikçe söyle.",["I think there's a mistake on the bill.","We didn't order the..."],1],
+  ["Alışveriş","Aldığın kulaklığın bir tarafı çalışmıyor, mağazaya geri götürdün.","Sorunu anlat ve değişim ya da iade iste.",["I bought these last week and...","Could I exchange them or get a refund?","I still have the receipt."],2],
+  ["Alışveriş","Mağazada beğendiğin bir ceketin senin bedenini bulamıyorsun.","Görevliye sor, başka renk/beden var mı öğren.",["Do you have this in a medium?","Is there any more in the back?"],1],
+  ["Alışveriş","İnternetten verdiğin sipariş 2 haftadır gelmedi, müşteri hizmetlerini aradın.","Sorunu anlat, ne zaman geleceğini sor.",["I placed an order two weeks ago and...","Could you check what's going on?"],2],
+  ["Seyahat","Havaalanında bavulun çıkmadı.","Görevliye durumu anlat, bavulunu tarif et.",["My luggage didn't arrive.","It's a medium-sized black suitcase with...","How long will it take to find it?"],2],
+  ["Seyahat","Otelde odanın kliması çalışmıyor.","Resepsiyonu ara, sorunu anlat, çözüm iste.",["The air conditioning in my room isn't working.","Could you send someone up, or move me to another room?"],1],
+  ["Seyahat","Yabancı bir şehirde kayboldun, birine yol soruyorsun.","Nereye gitmek istediğini söyle ve yol tarifini teyit et.",["Sorry to bother you, could you tell me how to get to...?","So I go straight and then turn left?"],1],
+  ["Seyahat","Trenini kaçırdın, gişedesin.","Ne olduğunu anlat, bir sonraki trene bilet değiştirebilir misin sor.",["I just missed my train.","Is it possible to change my ticket to the next one?"],2],
+  ["Sosyal","Arkadaşın seni hafta sonu partiye çağırıyor ama gitmek istemiyorsun.","Kırmadan kibarca reddet, bir bahane uydur.",["Thanks so much for inviting me, but...","I've already got plans.","Maybe next time?"],2],
+  ["Sosyal","Yeni tanıştığın biri sana ne iş yaptığını ve hobilerini soruyor.","Kendini 4-5 cümleyle tanıt.",["I'm currently studying...","In my free time I'm really into...","What about you?"],1],
+  ["Sosyal","Bir arkadaşın sınavdan kaldı ve morali bozuk.","Onu teselli et, bir şey öner.",["I'm really sorry to hear that.","It's not the end of the world.","Why don't we...?"],2],
+  ["Sosyal","Ev arkadaşın sürekli bulaşıkları yıkamıyor.","Kavga çıkarmadan konuyu aç ve bir çözüm öner.",["Hey, can we talk about something?","I've noticed that...","How about we take turns?"],3],
+  ["Sosyal","Bir arkadaşın en sevdiğin diziyi izlemediğini söyledi.","Onu izlemeye ikna et, neden iyi olduğunu anlat.",["You have to watch it!","What I love about it is...","Trust me, you won't regret it."],2],
+  ["İş & Okul","Bir toplantıya 15 dakika geç kaldın.","Özür dile, kısa bir açıklama yap.",["Sorry I'm late,","I got held up by...","It won't happen again."],1],
+  ["İş & Okul","Hocana ödevi bir gün geç teslim etmek için izin istiyorsun.","Nedenini açıkla, kibarca rica et.",["I was wondering if I could...","I've had some trouble with...","I'd really appreciate it."],2],
+  ["İş & Okul","İş görüşmesindesin: 'Tell me about yourself.' dediler.","Eğitimini, becerilerini ve hedefini 1 dakikada anlat.",["I'm a computer programming student...","I've been working with...","I'm really interested in..."],3],
+  ["İş & Okul","İş görüşmesinde 'What's your biggest weakness?' diye soruldu.","Dürüst ama olumlu bir cevap ver.",["One thing I'm working on is...","To deal with that, I've started..."],3],
+  ["İş & Okul","Ekip arkadaşın projedeki kendi kısmını yapmıyor.","Onunla konuşup durumu çözmeye çalış.",["I wanted to check in about...","Is everything okay?","Can we figure out a plan together?"],3],
+  ["İş & Okul","Bir yabancı yazılımcıya kendi projeni (bir web uygulaması) anlatıyorsun.","Ne yaptığını, hangi teknolojileri kullandığını, neden yaptığını anlat.",["It's basically an app that...","I built it with...","The idea came from..."],3],
+  ["Sorun Çözme","Komşunun müziği gece 2'de hâlâ çok yüksek.","Kapısını çal, kibar ama net ol.",["Sorry to bother you this late,","Would you mind turning it down a bit?","I have to get up early."],2],
+  ["Sorun Çözme","İnternetin 3 gündür çok yavaş, servis sağlayıcıyı aradın.","Sorunu açıkla ve teknisyen iste.",["My internet has been really slow for...","I've already tried restarting the router.","Could you send a technician?"],2],
+  ["Sağlık","Doktora gittin: 2 gündür başın ağrıyor ve uyuyamıyorsun.","Şikayetini anlat, ne zamandır sürdüğünü söyle.",["I've had a headache for...","It gets worse when...","I haven't been sleeping well."],2],
+  ["Sorun Çözme","Kiraladığın evin ısıtması bozuldu, ev sahibini arıyorsun.","Sorunu anlat ve ne zaman tamir edileceğini sor.",["The heating stopped working.","It's getting really cold.","When could someone come and fix it?"],2],
+  ["Fikir Belirt","Biri sana 'Is social media good or bad?' diye soruyor.","Görüşünü söyle, 2 sebep ver.",["Personally, I think...","On the one hand... on the other hand...","That's why I believe..."],3],
+  ["Fikir Belirt","'Should university be free?' sorusuna cevap ver.","Bir taraf seç ve savun.",["In my opinion,","The main reason is...","Some people argue that..., but..."],3],
+  ["Fikir Belirt","En sevdiğin oyunu ya da filmi birine öner.","Ne hakkında olduğunu ve neden sevdiğini anlat.",["It's about...","What makes it special is...","You should definitely check it out."],2],
+  ["Fikir Belirt","Biri 'Why do you want to live abroad?' diye soruyor.","Nedenlerini ve planını anlat.",["I've always wanted to...","One of the main reasons is...","My plan is to..."],3],
+  ["Sağlık", "Eczanedesin, boğazın ağrıyor ve reçetesiz bir şey istiyorsun.", "Belirtini anlat, ne önerdiklerini ve nasıl kullanılacağını sor.", ["I've got a sore throat.", "Do you have anything for...?", "How often should I take it?"], 1],
+  ["Sağlık", "Spor yaparken bileğini burktun, acil serviste görevliye anlatıyorsun.", "Ne olduğunu, nerenin ağrıdığını ve ne zaman olduğunu anlat.", ["I twisted my ankle while...", "It hurts when I put weight on it.", "It happened about an hour ago."], 2],
+  ["Sağlık", "Dişin çok ağrıyor, dişçiyi arayıp en erken randevuyu istiyorsun.", "Durumu anlat, acil olduğunu belirt, bir saat ayarla.", ["I've got a really bad toothache.", "Is there any chance I could come in today?", "What's the earliest appointment you have?"], 2],
+  ["Sağlık", "Doktor sana bir ilaç yazdı ama yan etkilerinden endişelisin.", "Endişeni açıkla, yan etkileri ve başka seçenek olup olmadığını sor.", ["I'm a bit worried about...", "Are there any side effects?", "Is there an alternative I could try?"], 3],
+  ["Ev & Komşu", "Yeni taşındın, komşunla kapıda karşılaştın.", "Kendini tanıt, nereye taşındığını söyle, güzel bir şey söyle.", ["Hi, I just moved in next door.", "I'm ...", "Nice to meet you! Let me know if you ever need anything."], 1],
+  ["Ev & Komşu", "Kargon yanlışlıkla komşuna bırakılmış.", "Kapısını çal, durumu açıkla, paketi iste ve teşekkür et.", ["Sorry to bother you, I think my package was left here.", "Could I pick it up?", "Thanks so much!"], 1],
+  ["Ev & Komşu", "Üst kattan tavanına su sızıyor.", "Komşuna sorunu anlat ve birlikte kontrol etmeyi öner.", ["I think there's a leak coming from your flat.", "There's a water stain on my ceiling.", "Could we take a look together?"], 2],
+  ["Ev & Komşu", "Ev sahibin kirayı %40 artırmak istiyor.", "Artışın fazla olduğunu söyle, gerekçe göster, pazarlık et.", ["I understand prices have gone up, but...", "I've always paid the rent on time.", "Would you consider a smaller increase?"], 3],
+  ["Telefon", "Bir şirketi aradın ama karşı tarafı iyi duyamıyorsun.", "Tekrar etmesini ve daha yavaş konuşmasını iste.", ["Sorry, I didn't catch that.", "Could you say that again?", "Could you speak a bit more slowly?"], 1],
+  ["Telefon", "Arkadaşına sesli mesaj bırakıyorsun: buluşma saatini değiştirmen gerekiyor.", "Kim olduğunu söyle, yeni saati ver, dönüş yapmasını iste.", ["Hey, it's ...", "Something came up, can we meet at ... instead?", "Call me back when you get this."], 1],
+  ["Telefon", "Kartını kaybettin, bankayı arıyorsun.", "Durumu anlat, kartı iptal ettir, yenisini iste.", ["I think I've lost my card.", "Could you block it, please?", "How long will it take to get a new one?"], 2],
+  ["Telefon", "Bir şirketten iş görüşmesi için arıyorlar ama şu an müsait değilsin.", "Teşekkür et, şu an konuşamadığını söyle, başka bir zaman öner.", ["Thanks for calling!", "I'm afraid it's not a good time right now.", "Could we talk tomorrow afternoon instead?"], 2],
+  ["Tanışma & Flört", "Bir etkinlikte hoşuna giden biriyle sohbet başlatmak istiyorsun.", "Selam ver, ortamla ilgili bir şey söyle, bir soru sor.", ["Hey, I'm ...", "This band is great, isn't it?", "How do you know the host?"], 1],
+  ["Tanışma & Flört", "Biriyle birkaç kez konuştun, onu kahveye davet etmek istiyorsun.", "Rahat bir şekilde davet et ve bir gün öner.", ["I really enjoy talking to you.", "Would you like to grab a coffee sometime?", "How about Saturday?"], 2],
+  ["Tanışma & Flört", "İlk buluşmada karşındaki 'Tell me something interesting about you.' diyor.", "İlginç bir şey anlat, sonra soruyu ona geri sor.", ["Well, I once...", "Not many people know that I...", "What about you?"], 2],
+  ["Tanışma & Flört", "Biri seni ikinci buluşmaya çağırıyor ama ilgilenmiyorsun.", "Kırmadan ama net bir şekilde reddet.", ["I had a nice time, thank you.", "I have to be honest though...", "I don't think we're a match, but I wish you the best."], 3],
+  ["Kafe & Restoran", "Arkadaşlarla yemektesiniz, hesap eşit bölünecek ama sen sadece çorba içtin.", "Kibarca sadece kendi payını ödemek istediğini söyle.", ["Would it be okay if I just paid for mine?", "I only had the soup.", "I hope that's fair."], 3],
+  ["Alışveriş", "İkinci el bir telefon alıyorsun, satıcıyla pazarlık yapıyorsun.", "Bir kusur ya da gerekçe söyle, teklif ver, anlaşmaya çalış.", ["I noticed there's a scratch on the screen.", "Would you take ... for it?", "Let's meet in the middle."], 3],
+  ["Seyahat", "Uçuşun iptal oldu, havayolu görevlisiyle konuşuyorsun.", "Yeni uçuş iste ve otel ya da tazminat sor.", ["My flight was just cancelled.", "Could you rebook me on the next flight?", "Will you cover a hotel for tonight?"], 3],
+  ["Sosyal", "Yakın arkadaşının doğum gününü unuttun.", "Özür dile, bahane uydurma, telafi teklif et.", ["I'm so sorry, I completely forgot.", "No excuses.", "Let me make it up to you, dinner's on me."], 2],
+  ["İş & Okul", "Patronundan zam istiyorsun.", "Ne istediğini söyle, başarılarınla gerekçelendir, kibar ol.", ["I was wondering if we could discuss my salary.", "Over the past year I've...", "I'd really appreciate it if you could consider..."], 3],
+  ["Sorun Çözme", "Arabanın lastiği patladı, yoldan geçen birinden yardım istiyorsun.", "Durumu anlat, yardım iste, teşekkür et.", ["Excuse me, I've got a flat tire.", "Could you give me a hand?", "Thank you so much!"], 1],
+  ["Fikir Belirt", "Biri 'Will AI take our jobs?' diye soruyor.", "Görüşünü söyle, bir örnek ver, karşı görüşe de değin.", ["I think AI will change jobs rather than...", "For example,...", "On the other hand,..."], 3]
 ];
 // Her kart için hedef kontrol listesi: [etiket, regex]. Sıra CARDS ile aynı.
 const POL="(could you|would you|can you|could i|can i|may i|please|excuse me|sorry|would it be possible|i was wondering|do you mind|would you mind|thank)";
@@ -592,17 +641,41 @@ const CHECKS=[
  /*27 üniversite*/ [["Taraf seçtin","(should|shouldn't|i think|i believe|in my opinion|i agree|i disagree)"],["Sebep verdin","(because|since|the main reason|that's why|for example)"],["Karşı görüşe değindin","(some people|others|however|on the other hand|argue)"]],
  /*28 öneri*/ [["Ne hakkında olduğunu anlattın","(it's about|its about|story|about a|follows)"],["Neden sevdiğini söyledin","(love|because|special|favorite|favourite|amazing|the best)"],["Önerdin","(you should|check it out|you have to|recommend|give it a try)"]],
  /*29 yurt dışı*/ [["Neden istediğini söyledin","(because|reason|want to|always wanted)"],["Ülke/yer söyledin","(germany|netherlands|holland|england|uk|usa|united states|america|canada|europe|abroad)"],["Planını anlattın","(plan|going to|will|hope to|first|then|apply|job|study)"]],
+ /*30*/ [["Belirtini söyledin","(sore|throat|hurt|pain|cough|ache)"],["Bir şey istedin","(anything for|something for|do you have|could you recommend|what do you recommend|medicine|lozenge|spray|syrup|pill|tablet)"],["Kullanımı sordun","(how (often|many|much|long)|how (do|should) i (take|use)|times a day|dose|when should i)"]],
+ /*31*/ [["Ne olduğunu anlattın","(twist|sprain|fell|fall|hurt|injur|slipped)"],["Nerede ağrıdığını","(ankle|foot|leg|knee|wrist)"],["Ne zaman olduğunu","(ago|this morning|today|yesterday|last night|hour|minutes)"]],
+ /*32*/ [["Ağrıyı anlattın","(tooth|teeth|pain|hurt|ache)"],["Randevu istedin","(appointment|book|come in|see the dentist|slot|see someone)"],["Aciliyeti belirttin","(as soon as|earliest|urgent|today|tomorrow|asap|emergency|any time|right away)"]],
+ /*33*/ [["Endişeni söyledin","(worried|concern|nervous|afraid|not sure|scared)"],["Yan etkiyi sordun","(side effect|effects|reaction|safe)"],["Alternatif sordun","(alternative|other option|something else|instead|another)"]],
+ /*34*/ [["Kendini tanıttın","(i'm|i am|my name)"],["Taşındığını söyledin","(moved|move in|new|next door|upstairs|downstairs|apartment|flat)"],["İyi dilek","(nice to meet|pleasure|let me know|if you (ever )?need|see you|great to|glad)"]],
+ /*35*/ [["Paketi söyledin","(package|parcel|delivery|box|order)"],["Almak istedin","(could i|can i|pick (it )?up|collect|get it|have it|grab it)"],["Teşekkür ettin","(thank|appreciate)"]],
+ /*36*/ [["Sorunu anlattın","(leak|water|drip|ceiling|stain|wet)"],["Kontrol önerdin","(could we|can we|check|take a look|have a look|plumber|come (up|down)|together)"],["Kibar oldun",POL]],
+ /*37*/ [["Fazla olduğunu söyledin","(too (much|high|big)|a lot|expensive|can't afford|steep|unfair|huge)"],["Gerekçe gösterdin","(always paid|on time|good tenant|taken care|market|other (flats|apartments|places)|been here|years)"],["Pazarlık ettin","(would you consider|how about|what if|middle|compromise|instead|percent|%|smaller|lower|less)"]],
+ /*38*/ [["Duyamadığını söyledin","(can't hear|couldn't hear|breaking up|bad (line|connection)|didn't catch|pardon|didn't hear)"],["Tekrar istedin","(repeat|say (that|it) again|one more time|again)"],["Yavaş/yüksek istedin","(slow|louder|speak up)"]],
+ /*39*/ [["Kim olduğunu söyledin","(it's|this is|hey|hi)"],["Yeni saati verdin","(\\d|o'clock|instead|move|change|later|earlier|pm|am|noon)"],["Dönüş istedin","(call me( back)?|let me know|text me|get back|message me)"]],
+ /*40*/ [["Kaybettiğini söyledin","(lost|missing|stolen|can't find)"],["İptal ettirdin","(cancel|block|freeze|stop)"],["Yeni kart istedin","(new (one|card)|replace|replacement|another card)"]],
+ /*41*/ [["Teşekkür ettin","(thank|appreciate)"],["Müsait olmadığını söyledin","(can't talk|not a good time|busy|in the middle|at the moment|right now)"],["Zaman önerdin","(could we|can we|how about|later|tomorrow|afternoon|morning|call (you )?back|reschedule|\\d)"]],
+ /*42*/ [["Selam verdin","(hi|hello|hey)"],["Ortamdan bahsettin","(this (place|event|party|music|song|band)|great|amazing|crowded|band|host)"],["Soru sordun","(\\?|what|how|do you|have you|are you)"]],
+ /*43*/ [["Davet ettin","(would you like|do you want|wanna|how about|let's|grab)"],["Plan söyledin","(coffee|drink|dinner|lunch|walk|hang out)"],["Gün önerdin","(saturday|sunday|monday|tuesday|wednesday|thursday|friday|weekend|tomorrow|tonight|sometime|this week)"]],
+ /*44*/ [["Bir şey anlattın","(i once|i have|i used to|i love|i can|i've|i was)"],["Detay verdin","(because|when|so|actually|that's why)"],["Soruyu geri sordun","(what about you|how about you|and you|your turn)"]],
+ /*45*/ [["Olumlu başladın","(thank|had a (nice|good|great|lovely)|enjoyed|sweet)"],["Net reddettin","(don't think|not (really )?feel|not interested|no spark|not a match|just friends|rather not|to be honest|have to be honest)"],["Kibar kaldın","(sorry|hope|wish you|best|kind)"]],
+ /*46*/ [["Ne yediğini söyledin","(only had|just had|soup|didn't (eat|have|order))"],["Kendi payını istedin","(my (part|share|own)|pay for (mine|what i)|separate|just (pay|mine))"],["Kibar oldun","(if that's ok|hope|mind|sorry|would it be|is that ok|fair|okay)"]],
+ /*47*/ [["Gerekçe gösterdin","(scratch|old|battery|used|crack|market|online|cheaper|dent)"],["Teklif verdin","(\\d|offer|how about|would you take|best price|lower)"],["Anlaşmaya çalıştın","(deal|take it|middle|final|agree)"]],
+ /*48*/ [["İptali söyledin","(cancel)"],["Yeni uçuş istedin","(next flight|another flight|rebook|alternative|earliest)"],["Telafi sordun","(hotel|compensat|refund|voucher|meal|accommodation|cover)"]],
+ /*49*/ [["Özür diledin","(sorry|apologi)"],["Hatanı kabul ettin","(forgot|slipped my mind|my bad|no excuse)"],["Telafi teklif ettin","(make it up|let me|treat you|take you|dinner|celebrate|buy you|on me)"]],
+ /*50*/ [["Zam istedin","(raise|salary|pay|increase)"],["Gerekçe gösterdin","(i've|achiev|responsib|project|results|contribut|year)"],["Kibar oldun","(would it be possible|i was wondering|could we discuss|open to|consider|appreciate)"]],
+ /*51*/ [["Sorunu anlattın","(flat|tire|tyre|puncture|car)"],["Yardım istedin","(help|hand|could you|can you|do you know)"],["Teşekkür ettin","(thank|appreciate)"]],
+ /*52*/ [["Görüşünü söyledin","(i think|i believe|in my opinion|personally|i feel)"],["Örnek/sebep verdin","(because|since|the reason|for example|for instance|like)"],["Karşı görüşe değindin","(on the other hand|however|but|although|some people)"]]
 ];
 
-const META={"Kafe & Restoran":["#F5D94E","☕"],"Alışveriş":["#F0A44B","🛍️"],"Seyahat":["#5F8FD9","✈️"],"Sosyal":["#E8857B","🎉"],"İş & Okul":["#86C46E","💼"],"Sorun Çözme":["#B79CE0","🔧"],"Fikir Belirt":["#5FC3BC","💬"]};
+const META={"Kafe & Restoran":["#F5D94E","☕"],"Alışveriş":["#F0A44B","🛍️"],"Seyahat":["#5F8FD9","✈️"],"Sosyal":["#E8857B","🎉"],"İş & Okul":["#86C46E","💼"],"Sorun Çözme":["#B79CE0","🔧"],"Fikir Belirt":["#5FC3BC","💬"],"Sağlık":["#F28DB2","🩺"],"Ev & Komşu":["#C79A6B","🏠"],"Telefon":["#9AA7F0","📞"],"Tanışma & Flört":["#D46BD4","💘"]};
+const DIFF=[null,["Kolay","#6CC36A"],["Orta","#F5D94E"],["Zor","#E0605A"]];
 const $=id=>document.getElementById(id);
 const CATS=[...new Set(CARDS.map(c=>c[0]))];
 
 /* ================= KAYIT (localStorage) ================= */
 const KEY="speakdeck.v2";
-const DEF={xp:0,streak:0,best:0,lastDay:null,freezes:0,days:{},frozenDays:[],badges:[],totalCards:0,totalWords:0,catsDone:[],goal:3,dur:60,prep:15,onboarded:false,maxWords:0,sessions:[],name:"",avatar:"🦊",createdAt:null};
+const DEF={xp:0,streak:0,best:0,lastDay:null,freezes:0,days:{},frozenDays:[],badges:[],totalCards:0,totalWords:0,catsDone:[],goal:3,dur:60,prep:15,onboarded:false,maxWords:0,sessions:[],name:"",avatar:"🦊",createdAt:null,cardBest:{},filter:{cats:[],diff:[],fresh:false}};
 let S;
-function load(){try{S=Object.assign({},DEF,JSON.parse(localStorage.getItem(KEY)||"{}"))}catch(e){S=Object.assign({},DEF)}}
+function load(){const d=JSON.parse(JSON.stringify(DEF));try{S=Object.assign(d,JSON.parse(localStorage.getItem(KEY)||"{}"))}catch(e){S=d}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 
 /* ================= TARİH ================= */
@@ -774,19 +847,40 @@ $("resetAll").onclick=()=>{const b=$("resetAll");if(b.dataset.sure){localStorage
   else{b.dataset.sure=1;b.textContent="Emin misin? Tekrar bas";setTimeout(()=>{b.dataset.sure="";b.textContent="İlerlemeyi sıfırla"},3000)}};
 
 /* ================= PLAY: DESTE ================= */
-let cat="Hepsi",order=[],pos=0,hist=[],completed=false;
-$("chips").innerHTML=["Hepsi",...CATS].map(c=>`<button class="chip ${c==="Hepsi"?"on":""}" data-c="${c}">${META[c]?META[c][1]+" ":""}${c}</button>`).join("");
-$("chips").onclick=e=>{const b=e.target.closest(".chip");if(!b)return;cat=b.dataset.c;document.querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x===b));
-  $("catIc").textContent=META[cat]?META[cat][1]:"🃏";$("catModal").classList.remove("on");shuffle();toast(cat==="Hepsi"?"Tüm kategoriler":cat)};
-$("catBtn").onclick=()=>$("catModal").classList.add("on");
-$("catClose").onclick=()=>$("catModal").classList.remove("on");
-$("catModal").onclick=e=>{if(e.target.id==="catModal")$("catModal").classList.remove("on")};
-function shuffle(){order=CARDS.map((c,i)=>i).filter(i=>cat==="Hepsi"||CARDS[i][0]===cat);
-  for(let i=order.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]]}pos=0;hist=[];renderDeck()}
+let order=[],pos=0,hist=[],completed=false,draft=null;
+function matches(i,f){const c=CARDS[i];return (!f.cats.length||f.cats.includes(c[0]))&&(!f.diff.length||f.diff.includes(c[4]))&&(!f.fresh||S.cardBest[i]==null)}
+function poolOf(f){return CARDS.map((c,i)=>i).filter(i=>matches(i,f))}
+function renderPicker(){const f=draft;
+  const base={cats:[],diff:f.diff,fresh:f.fresh};
+  $("catTiles").innerHTML=CATS.map(c=>{const all=CARDS.map((x,i)=>i).filter(i=>CARDS[i][0]===c),done=all.filter(i=>S.cardBest[i]!=null).length;
+    const on=!f.cats.length||f.cats.includes(c);
+    return `<button class="ctile ${on?"on":""}" data-c="${c}" style="--c:${META[c][0]}"><span class="te">${META[c][1]}</span><span class="tn">${c}</span><span class="tp">${done}/${all.length}</span><i style="width:${all.length?done/all.length*100:0}%"></i></button>`}).join("");
+  $("catAll").style.visibility=f.cats.length?"visible":"hidden";
+  $("diffRow").innerHTML=[1,2,3].map(d=>{const n=CARDS.filter((c,i)=>c[4]===d&&(!f.cats.length||f.cats.includes(c[0]))).length,on=!f.diff.length||f.diff.includes(d);
+    return `<button class="dbtn ${on?"on":""}" data-d="${d}" style="--c:${DIFF[d][1]}"><span class="dots">${"●".repeat(d)}${"○".repeat(3-d)}</span>${DIFF[d][0]}<small>${n} kart</small></button>`}).join("");
+  $("freshOnly").checked=f.fresh;
+  const n=poolOf(f).length,b=$("catPlay");b.disabled=!n;b.textContent=n?`▶ Oyna · ${n} kart`:"Bu filtrede kart kalmadı";}
+function toggleIn(arr,v,all){if(!arr.length)return [v];const r=arr.includes(v)?arr.filter(x=>x!==v):[...arr,v];return r.length===all.length?[]:r}
+$("catTiles").onclick=e=>{const b=e.target.closest(".ctile");if(!b)return;draft.cats=toggleIn(draft.cats,b.dataset.c,CATS);renderPicker()};
+$("diffRow").onclick=e=>{const b=e.target.closest(".dbtn");if(!b)return;draft.diff=toggleIn(draft.diff,+b.dataset.d,[1,2,3]);renderPicker()};
+$("catAll").onclick=()=>{draft.cats=[];renderPicker()};
+$("freshOnly").onchange=e=>{draft.fresh=e.target.checked;renderPicker()};
+function closeCat(){$("catModal").classList.remove("on")}
+$("catBtn").onclick=()=>{draft=JSON.parse(JSON.stringify(S.filter));renderPicker();$("catModal").classList.add("on")};
+$("catClose").onclick=closeCat;
+$("catModal").onclick=e=>{if(e.target.id==="catModal")closeCat()};
+$("catPlay").onclick=()=>{S.filter=draft;save();closeCat();shuffle();const f=S.filter;
+  toast(!f.cats.length&&!f.diff.length&&!f.fresh?"Tüm kartlar":`${order.length} kartlık deste hazır`)};
+function updateCatIcon(){const f=S.filter,act=f.cats.length||f.diff.length||f.fresh;
+  $("catIc").textContent=f.cats.length===1?META[f.cats[0]][1]:"🃏";
+  let bd=$("catBtn").querySelector(".catBadge");if(!bd){bd=document.createElement("b");bd.className="catBadge";$("catBtn").appendChild(bd)}
+  bd.textContent=order.length;bd.style.display=act?"":"none"}
+function shuffle(){order=poolOf(S.filter);if(!order.length){S.filter={cats:[],diff:[],fresh:false};save();order=poolOf(S.filter);toast("Filtredeki kartları bitirdin 🎉 Tüm kartlar açıldı")}
+  for(let i=order.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]]}pos=0;hist=[];updateCatIcon();renderDeck()}
 function cur(){return CARDS[order[pos%order.length]]}
-function cardHTML(i,cls){const [c,sit,goal,hints]=CARDS[i];const [col,emo]=META[c];
+function cardHTML(i,cls){const [c,sit,goal,hints,d]=CARDS[i];const [col,emo]=META[c];const best=S.cardBest[i];
   return `<div class="card ${cls}"><div class="float"><div class="inner">
-    <div class="face front" style="background:${col}"><span class="catTag px">${c.toLocaleUpperCase("tr")}</span><div class="emoji">${emo}</div>
+    <div class="face front" style="background:${col}"><span class="catTag px">${c.toLocaleUpperCase("tr")}</span><span class="diffTag">${[1,2,3].map(k=>`<b style="${k<=d?"background:"+DIFF[d][1]:""}"></b>`).join("")}${DIFF[d][0]}</span>${best!=null?`<span class="doneTag">✓ en iyi ${best}</span>`:""}<div class="emoji">${emo}</div>
       <div class="sit">${sit}</div><div class="goalBox">🎯 ${goal}</div><div class="tapHint">dokun → ipucu kalıplar</div></div>
     <div class="face back"><h3 class="px">💡 İşine yarayabilecek kalıplar</h3>${hints.map(h=>`<div class="h">${h}</div>`).join("")}
       <div class="tapHint" style="margin-top:auto">önce kendin dene 😉 · dokun → geri</div></div></div></div></div>`}
@@ -946,7 +1040,8 @@ async function complete(){
   S.xp+=xp;S.totalCards++;S.totalWords+=m.words;S.maxWords=Math.max(S.maxWords,m.words);
   if(!S.catsDone.includes(cur()[0]))S.catsDone.push(cur()[0]);
   S.sessions.push({d:today(),sc,wpm:m.wpm,uniq:m.uniq,fill:m.fill,len:m.avgLen,w:m.words,g:gram==null?null:gram.length});
-  lastEval={m,sc,gram,session:S.sessions[S.sessions.length-1]};
+  lastEval={m,sc,gram,idx,prevBest:S.cardBest[idx],session:S.sessions[S.sessions.length-1]};
+  S.cardBest[idx]=Math.max(S.cardBest[idx]??0,sc);
   if(S.sessions.length>300)S.sessions=S.sessions.slice(-300);
   const after=levelInfo(S.xp).l;if(after>before)lines.push(`⭐ SEVİYE ATLADIN: Sv. ${after}!`);
   checkBadges().forEach(b=>lines.push("🏅 Yeni rozet: "+b));
@@ -1027,7 +1122,8 @@ function applyAI(R){
   const gramS=Math.max(0,1-n/Math.max(1,m.words/10));
   const old=lastEval.sc,sc=combine(goalS==null?1:goalS,gramS,fluencyScore(m)),stars=starsFor(sc);
   if(sc===old)return;
-  lastEval.sc=sc;if(lastEval.session){lastEval.session.sc=sc;lastEval.session.ai=1;save()}
+  lastEval.sc=sc;if(lastEval.session){lastEval.session.sc=sc;lastEval.session.ai=1}
+  if(lastEval.idx!=null)S.cardBest[lastEval.idx]=Math.max(lastEval.prevBest??0,sc);save();
   $("scFg").style.stroke=sc>=85?"#6CC36A":sc>=65?"#F5D94E":"#F0A44B";$("scFg").style.strokeDashoffset=326.7*(1-sc/100);
   countUp($("scN"),sc,900);
   [...$("stars").children].forEach((x,i)=>x.classList.toggle("on",i<stars));
