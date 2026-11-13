@@ -860,14 +860,16 @@ async function runAI(){
   $("aiOut").innerHTML='<div class="aiLoad"><i></i>Gemma cevabını inceliyor…</div>';
   const idx=order[pos%order.length],c=CARDS[idx];
   let r,j;
-  try{r=await fetch(`${AI_URL}/evaluate`,{method:"POST",headers:{"Content-Type":"application/json"},
+  const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),60000);
+  try{r=await fetch(`${AI_URL}/evaluate`,{method:"POST",signal:ctl.signal,headers:{"Content-Type":"application/json"},
       body:JSON.stringify({device:deviceId(),situation:c[1],goal:c[2],checks:(CHECKS[idx]||[]).map(x=>x[0]),answer,fromSpeech:!!lastFromSpeech})});
-    j=await r.json()}catch(e){r=null}
-  aiBusy=false;
+    j=await r.json()}catch(e){r=null;j={error:e&&e.name==="AbortError"?"timeout":"network"}}
+  clearTimeout(to);aiBusy=false;
   if(!r||!r.ok){const code=j&&j.error;if(j&&typeof j.energy==="number"){energy=j.energy;energyMax=j.max||energyMax}
     const msg={no_energy:"⚡ Bugünlük yapay zekâ enerjin bitti. Yarın 5 yeni enerjiyle dönersin! Bu arada aşağıdan Claude'a da sorabilirsin.",
       ip_limit:"Bu ağdan bugün çok fazla istek geldi. Biraz sonra tekrar dene.",ai_unavailable:"Yapay zekâ şu an meşgul. Enerjin düşmedi, birazdan tekrar dene.",
-      too_short:"Cevap çok kısa, en az 5 İngilizce kelime gerekli."}[code]||"Bağlantı kurulamadı (internet?). Enerjin düşmedi.";
+      too_short:"Cevap çok kısa, en az 5 İngilizce kelime gerekli.",
+      timeout:"Yapay zekâ 60 saniyede cevap vermedi. Enerjin düşmediyse tekrar deneyebilirsin."}[code]||"Bağlantı kurulamadı (internet?). Enerjin düşmedi.";
     $("aiOut").innerHTML=`<div class="aiErr">${msg}</div>`;if(code!=="no_energy"){btn.style.display=""}showEnergy();return}
   energy=j.energy;energyMax=j.max;showEnergy();lastAI=j.result;renderAI(j.result,answer);
 }
