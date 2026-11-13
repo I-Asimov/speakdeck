@@ -136,11 +136,20 @@ button{font:inherit;color:inherit;cursor:pointer}
 .status b{font-size:18px;color:#fff}
 .controls{display:flex;align-items:center;justify-content:space-between;padding:0 6px}
 .micWrap{position:relative;width:clamp(76px,11dvh,92px);height:clamp(76px,11dvh,92px);flex:none}
-.micWrap svg{position:absolute;inset:0;transform:rotate(-90deg)}
-.mic{position:absolute;inset:9px;border-radius:50%;border:3px solid #000;background:var(--yellow);font-size:30px;box-shadow:0 5px 0 #000}
-.mic:active{transform:translateY(3px);box-shadow:0 2px 0 #000}
-.mic.live{background:var(--red);animation:pulse 1.2s infinite}
-@keyframes pulse{50%{box-shadow:0 5px 0 #000,0 0 0 10px rgba(224,96,90,.3)}}
+.micWrap>svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.mic{position:absolute;inset:10px;border-radius:50%;border:2px solid rgba(0,0,0,.55);display:grid;place-items:center;color:#3b2a06;
+  background:radial-gradient(circle at 34% 28%,#fffbe2 0%,#ffe680 38%,#f5cf45 70%,#e2ad2c 100%);
+  box-shadow:0 8px 20px rgba(245,207,69,.35),0 3px 0 rgba(0,0,0,.45),inset 0 -5px 10px rgba(160,100,0,.25),inset 0 3px 6px rgba(255,255,255,.6);
+  transition:background .4s,box-shadow .4s,color .3s;will-change:transform}
+.mic svg{width:42%;height:42%;filter:drop-shadow(0 1px 0 rgba(255,255,255,.5))}
+.mic:active{box-shadow:0 4px 10px rgba(245,207,69,.3),0 1px 0 rgba(0,0,0,.45),inset 0 -3px 8px rgba(160,100,0,.25)}
+.mic.live{color:#fff;background:radial-gradient(circle at 34% 28%,#ffd6cf 0%,#ff8f7f 40%,#ea5f53 72%,#c94338 100%);
+  box-shadow:0 8px 24px rgba(234,95,83,.45),0 3px 0 rgba(0,0,0,.45),inset 0 -5px 10px rgba(120,20,10,.25),inset 0 3px 6px rgba(255,255,255,.45)}
+.mic.live svg{filter:none}
+.micWrap .ripple{position:absolute;inset:10px;border-radius:50%;border:2px solid rgba(255,143,127,.7);opacity:0;pointer-events:none}
+.micWrap.speaking .ripple{animation:ripple 1.6s cubic-bezier(.2,.6,.3,1) infinite}
+.micWrap.speaking .ripple:nth-of-type(2){animation-delay:.8s}
+@keyframes ripple{0%{transform:scale(1);opacity:.75}100%{transform:scale(1.65);opacity:0}}
 .sheet{background:var(--glass);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:3px solid #000;border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
 #live{max-height:22dvh;min-height:40px;overflow:auto;font-size:15px;font-weight:700;line-height:1.45}
 #live .interim{color:var(--muted)}
@@ -249,6 +258,17 @@ textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line)
   .catGrid{flex-wrap:wrap;overflow:visible;justify-content:center;gap:10px;padding:4px 0}
   .catGrid .chip{font-size:15px;padding:10px 14px}
 
+
+  .avatarBtn{font-size:22px}
+  .accHead{display:flex;gap:14px;align-items:center}
+  .accAvatar{width:76px;height:76px;flex:none;border-radius:22px;border:3px solid #000;background:radial-gradient(circle at 35% 30%,#fff3c4,#f5d94e);font-size:42px;box-shadow:0 4px 0 #000;cursor:pointer}
+  .accName{width:100%;background:transparent;border:0;border-bottom:2px dashed var(--line);color:var(--text);font-size:24px;padding:4px 0;outline:none}
+  .accName:focus{border-bottom-color:var(--yellow)}
+  .accPick{display:grid!important;grid-template-columns:repeat(6,1fr);gap:8px}
+  .accPick[hidden]{display:none!important}
+  .accPick button{font-size:28px;aspect-ratio:1;border-radius:14px;border:2px solid #000;background:#1d1a33;cursor:pointer}
+  .accPick button.on{background:var(--yellow)}
+
 /* ---- GENİŞ EKRAN ---- */
 @media (min-width:900px){
   #landing .wrap{max-width:980px;display:grid;grid-template-columns:1.1fr 1fr;grid-template-areas:"top top" "hero stats" "hero side";grid-template-rows:auto auto 1fr;gap:22px 34px;align-items:start}
@@ -276,6 +296,7 @@ textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line)
       <div class="row">
         <span class="pill" title="Yapay zekâ enerjisi">⚡ <span class="eN">–</span></span>
         <span class="pill" title="Seri dondurucu">🧊 <span id="freezeN">0</span></span>
+        <button class="iconbtn avatarBtn" id="openAccount" aria-label="Hesabım"><span id="avTop">🦊</span></button>
         <button class="iconbtn" id="openSettings" aria-label="Ayarlar">⚙️</button>
       </div>
     </div>
@@ -298,6 +319,7 @@ textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line)
       <div class="hero">
         <div class="logo px">Speak<span>Deck</span></div>
         <div class="tagline">Kart çek. Konuş. Hata yap. Düzelt. Tekrarla.</div>
+        <div class="tagline px" id="hello" style="color:var(--yellow);margin-top:4px"></div>
         <div class="fan"><div class="mini">✈️</div><div class="mini">☕</div><div class="mini">💼</div></div>
       </div>
       <button class="btn y big px" id="startBtn" style="width:100%;margin-top:6px">▶ BAŞLA</button>
@@ -356,6 +378,39 @@ textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line)
 </section>
 
 
+
+<!-- ===== HESABIM ===== -->
+<section class="screen" id="account">
+  <div class="wrap">
+    <div class="row">
+      <button class="iconbtn" id="accBack" aria-label="Geri">←</button>
+      <h2 class="px" style="margin:0;font-size:26px;text-shadow:3px 3px 0 #000">Hesabım</h2>
+    </div>
+    <div class="panel accHead">
+      <button class="accAvatar" id="accAvatar" aria-label="Avatarı değiştir">🦊</button>
+      <div style="flex:1;min-width:0">
+        <input id="accName" class="accName px" maxlength="24" placeholder="Adını yaz…" autocomplete="off">
+        <div class="muted" style="font-weight:800;font-size:13px" id="accSince"></div>
+      </div>
+    </div>
+    <div class="panel accPick" id="accPick" hidden></div>
+    <div class="tiles big" id="accTiles"></div>
+    <div class="panel">
+      <div class="lbl">💾 İLERLEMEM</div>
+      <p class="muted" style="margin:8px 0 12px;font-weight:700;font-size:13px">İlerlemen bu cihazın tarayıcısında saklanıyor. Başka bir cihaza geçmek ya da yedek almak için yedek kodunu kullan.</p>
+      <div class="row" style="flex-wrap:wrap">
+        <button class="btn y" id="accExport" style="flex:1">📋 Yedek kodunu kopyala</button>
+        <button class="btn" id="accImportOpen" style="flex:1">📥 Yedekten yükle</button>
+      </div>
+      <div id="accImportBox" style="display:none;margin-top:10px">
+        <textarea id="accImportTxt" style="display:block" placeholder="Yedek kodunu buraya yapıştır…"></textarea>
+        <button class="btn g" id="accImport" style="width:100%;margin-top:8px">Yükle</button>
+      </div>
+    </div>
+    <div class="panel muted" style="font-size:12px;font-weight:700">Cihaz kimliği: <span id="accDev"></span></div>
+  </div>
+</section>
+
 <!-- ===== İSTATİSTİK ===== -->
 <section class="screen" id="stats">
   <div class="wrap">
@@ -404,7 +459,8 @@ textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line)
       <div class="micWrap">
         <svg viewBox="0 0 92 92"><circle cx="46" cy="46" r="43" fill="none" stroke="#2a2640" stroke-width="6"/>
         <circle id="ring" cx="46" cy="46" r="43" fill="none" stroke="#F5D94E" stroke-width="6" stroke-linecap="round" stroke-dasharray="270.2" stroke-dashoffset="270.2"/></svg>
-        <button class="mic" id="mic" aria-label="Konuş">🎙️</button>
+        <span class="ripple"></span><span class="ripple"></span>
+        <button class="mic" id="mic" aria-label="Konuş"></button>
       </div>
       <button class="iconbtn" id="next" aria-label="Sonraki">⏭</button>
     </div>
@@ -543,7 +599,7 @@ const CATS=[...new Set(CARDS.map(c=>c[0]))];
 
 /* ================= KAYIT (localStorage) ================= */
 const KEY="speakdeck.v2";
-const DEF={xp:0,streak:0,best:0,lastDay:null,freezes:0,days:{},frozenDays:[],badges:[],totalCards:0,totalWords:0,catsDone:[],goal:3,dur:60,prep:15,onboarded:false,maxWords:0,sessions:[]};
+const DEF={xp:0,streak:0,best:0,lastDay:null,freezes:0,days:{},frozenDays:[],badges:[],totalCards:0,totalWords:0,catsDone:[],goal:3,dur:60,prep:15,onboarded:false,maxWords:0,sessions:[],name:"",avatar:"🦊",createdAt:null};
 let S;
 function load(){try{S=Object.assign({},DEF,JSON.parse(localStorage.getItem(KEY)||"{}"))}catch(e){S=Object.assign({},DEF)}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
@@ -610,9 +666,9 @@ function checkBadges(){const n=[];BADGES.forEach(([id,ic,name,desc,f])=>{const [
 
 /* ================= EKRAN YÖNETİMİ ================= */
 function show(id){document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("on",s.id===id));window.scrollTo(0,0);
-  if(id==="landing")renderLanding(); if(id==="play")renderHud(); if(id==="onboard")requestAnimationFrame(obDots); if(id==="achievements")renderAch(); if(id==="stats")renderStats();}
+  if(id==="landing")renderLanding(); if(id==="play")renderHud(); if(id==="onboard")requestAnimationFrame(obDots); if(id==="achievements")renderAch(); if(id==="stats")renderStats(); if(id==="account")renderAccount();}
 function route(){const h=location.hash.slice(1);
-  if(h==="play")show("play"); else if(h==="intro")show("onboard"); else if(h==="achievements")show("achievements"); else if(h==="stats")show("stats"); else show("landing")}
+  if(h==="play")show("play"); else if(h==="intro")show("onboard"); else if(h==="achievements")show("achievements"); else if(h==="stats")show("stats"); else if(h==="account")show("account"); else show("landing")}
 addEventListener("hashchange",route);
 function go(h){if(location.hash.slice(1)===h)route();else location.hash=h}
 
@@ -648,7 +704,8 @@ function renderLanding(){
   {const ss=S.sessions||[],w7=ss.filter(x=>diffDays(x.d,today())<7),a=k=>{const v=avg(w7.map(x=>x[k]));return v==null?"—":Math.round(v)};
    $("miniStats").innerHTML=ss.length?`<span>Ort. puan <b>${a("sc")}</b></span><span>Kelime/dk <b>${a("wpm")}</b></span><span>Çeşitlilik <b>${a("uniq")}${a("uniq")==="—"?"":"%"}</b></span>`:"Kart tamamladıkça gelişimin burada görünecek";}
   $("totCards").textContent=S.totalCards; $("totWords").textContent=S.totalWords; $("bestStreak").textContent=S.best;
-  $("startBtn").textContent=S.totalCards?"▶ DEVAM ET":"▶ BAŞLA";
+  $("startBtn").textContent=S.totalCards?"▶ DEVAM ET":"▶ BAŞLA";syncAvatar();
+  $("hello").textContent=S.name?`Selam ${S.name} ${S.avatar}`:"";
 }
 $("startBtn").onclick=()=>go(S.onboarded?"play":"intro");
 
@@ -670,6 +727,31 @@ function renderAch(){
 $("achTabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;achFilter=b.dataset.f;[...$("achTabs").children].forEach(x=>x.classList.toggle("on",x===b));renderAch()};
 $("openAch").onclick=()=>go("achievements");
 $("achBack").onclick=()=>history.length>1?history.back():go("landing");
+
+
+/* ================= HESABIM ================= */
+const AVATARS=["🦊","🐼","🐸","🐙","🦉","🐯","🐨","🦄","🐧","🐲","🤖","👾"];
+function renderAccount(){
+  if(!S.createdAt){S.createdAt=(S.sessions[0]&&S.sessions[0].d)||today();save()}
+  $("accAvatar").textContent=S.avatar;$("accName").value=S.name||"";
+  const [y,m,d]=S.createdAt.split("-");$("accSince").textContent=`${d}.${m}.${y} tarihinden beri · Seviye ${levelInfo(S.xp).l}`;
+  $("accPick").innerHTML=AVATARS.map(a=>`<button data-a="${a}" class="${a===S.avatar?"on":""}">${a}</button>`).join("");
+  const T=[[S.xp,"TOPLAM XP"],[S.best,"EN UZUN SERİ"],[S.totalCards,"KART"],[S.totalWords,"KELİME"],[S.badges.length+"/"+BADGES.length,"ROZET"],[Object.keys(S.days).length,"AKTİF GÜN"]];
+  $("accTiles").innerHTML=T.map(([v,k])=>`<div class="tile in"><div class="v px">${v}</div><div class="k">${k}</div></div>`).join("");
+  $("accDev").textContent=deviceId().slice(0,8)+"…";$("accImportBox").style.display="none";
+}
+function syncAvatar(){$("avTop").textContent=S.avatar}
+$("openAccount").onclick=()=>go("account");
+$("accBack").onclick=()=>history.length>1?history.back():go("landing");
+$("accAvatar").onclick=()=>{$("accPick").hidden=!$("accPick").hidden};
+$("accPick").onclick=e=>{const b=e.target.closest("[data-a]");if(!b)return;S.avatar=b.dataset.a;save();syncAvatar();$("accPick").hidden=true;renderAccount()};
+$("accName").oninput=()=>{S.name=$("accName").value.trim().slice(0,24);save()};
+$("accExport").onclick=()=>{let code;try{code="SD1:"+btoa(unescape(encodeURIComponent(JSON.stringify(S))))}catch(e){toast("Yedek oluşturulamadı");return}
+  navigator.clipboard.writeText(code).then(()=>toast("Yedek kodu kopyalandı ✓"),()=>{$("accImportBox").style.display="block";$("accImportTxt").value=code;toast("Kutudan elle kopyala")})};
+$("accImportOpen").onclick=()=>{const b=$("accImportBox");b.style.display=b.style.display==="block"?"none":"block";$("accImportTxt").value=""};
+$("accImport").onclick=()=>{const t=$("accImportTxt").value.trim();
+  try{if(!t.startsWith("SD1:"))throw 0;const o=JSON.parse(decodeURIComponent(escape(atob(t.slice(4)))));if(typeof o!=="object"||typeof o.xp!=="number")throw 0;
+    S=Object.assign({},DEF,o);save();syncAvatar();renderAccount();toast("Yedek yüklendi ✓")}catch(e){toast("Geçersiz yedek kodu")}};
 
 /* ================= ONBOARDING ================= */
 const slides=$("slides"), nS=slides.children.length;
@@ -728,6 +810,22 @@ $("home").onclick=()=>{if(phase!=="idle")stopAll();go("landing")};
 function renderHud(){const li=levelInfo(S.xp);$("hLvl").textContent=li.l;$("hStreak").textContent=S.streak;
   $("hToday").textContent=S.days[today()]||0;$("hGoal").textContent=S.goal;$("hXp").style.width=(li.inLvl/li.need*100)+"%"}
 
+
+/* ================= MİKROFON: ikonlar + konuşurken zıplama ================= */
+const MIC_ICONS={
+  mic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="8.5" y="2.5" width="7" height="12" rx="3.5" fill="currentColor" fill-opacity=".18"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3.5"/><path d="M8.5 21.5h7"/></svg>',
+  skip:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 5.5v13a1 1 0 0 0 1.5.86l10-6.5a1 1 0 0 0 0-1.72l-10-6.5A1 1 0 0 0 5 5.5z"/><rect x="17.5" y="5" width="2.6" height="14" rx="1.3"/></svg>',
+  stop:'<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="3.5"/></svg>',
+};
+function setMicIcon(k){$("mic").innerHTML=MIC_ICONS[k]}
+let bump=0,bumpRaf=0;
+function micBounce(amount=.09){bump=Math.min(.22,bump+amount);if(!bumpRaf)bumpRaf=requestAnimationFrame(bounceLoop)}
+function bounceLoop(){bump*=.86;const m=$("mic");
+  if(bump<.003){bump=0;m.style.transform="";bumpRaf=0;return}
+  m.style.transform=`translateY(${(-bump*26).toFixed(1)}px) scale(${(1+bump).toFixed(3)},${(1+bump*.7).toFixed(3)})`;
+  bumpRaf=requestAnimationFrame(bounceLoop)}
+setMicIcon("mic");
+
 /* ================= PLAY: SÜRE + MİKROFON ================= */
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition, C=270.2;
 let phase="idle",timer=null,left=0,total=0,rec=null,listening=false,finalText="";
@@ -735,24 +833,27 @@ function words(){return ((finalText+" "+$("manual").value).trim().match(/[A-Za-z
 function updWc(){$("wc").textContent=words();$("doneBtn").disabled=completed||words()<5}
 function ring(f,c){$("ring").style.strokeDashoffset=C*(1-f);$("ring").style.stroke=c}
 function resetRound(){finalText="";completed=false;$("live").innerHTML="";$("manual").value="";ring(0,"#F5D94E");
-  $("status").innerHTML="Kaydır ↔ · Dokun = ipucu · 🎙️ = başla";$("mic").classList.remove("live");$("mic").textContent="🎙️";updWc()}
+  $("status").innerHTML="Kaydır ↔ · Dokun = ipucu · 🎙️ = başla";$("mic").classList.remove("live");setMicIcon("mic");document.querySelector(".micWrap").classList.remove("speaking");updWc()}
 function run(sec,col,label,end){total=left=sec;clearInterval(timer);
   const u=()=>{ring(left/total,col);$("status").innerHTML=`${label} <b>${left}s</b>`};u();
   timer=setInterval(()=>{left--;u();if(left<=0){clearInterval(timer);end()}},1000)}
-function startPrep(){if(!S.prep)return startSpeak();phase="prep";$("mic").textContent="⏭";run(S.prep,"#F5D94E","🧠 Düşün…",startSpeak)}
+function startPrep(){if(!S.prep)return startSpeak();phase="prep";setMicIcon("skip");run(S.prep,"#F5D94E","🧠 Düşün…",startSpeak)}
 let speakT0=0,speakSecs=0;
-function startSpeak(){speakT0=performance.now();speakSecs=0;phase="speak";$("mic").classList.add("live");$("mic").textContent="⏹";startMic();run(S.dur,"#E0605A","🎙️ Konuş!",endSpeak)}
+function startSpeak(){speakT0=performance.now();speakSecs=0;phase="speak";$("mic").classList.add("live");setMicIcon("stop");startMic();run(S.dur,"#E0605A","🎙️ Konuş!",endSpeak)}
 function endSpeak(){stopAll();if(words()>=5)complete();else{$("status").innerHTML="Biraz daha konuşmalısın (en az 5 kelime) 🙂";ring(0,"#F5D94E")}}
-function stopAll(){if(phase==="speak"&&speakT0)speakSecs+=(performance.now()-speakT0)/1000;speakT0=0;clearInterval(timer);phase="idle";listening=false;if(rec)try{rec.stop()}catch(e){}$("mic").classList.remove("live");$("mic").textContent="🎙️"}
+function stopAll(){if(phase==="speak"&&speakT0)speakSecs+=(performance.now()-speakT0)/1000;speakT0=0;clearInterval(timer);phase="idle";listening=false;if(rec)try{rec.stop()}catch(e){}$("mic").classList.remove("live");setMicIcon("mic");document.querySelector(".micWrap").classList.remove("speaking")}
 $("mic").onclick=()=>{if(phase==="idle"){if(completed){toast("Bu kart bitti — sonrakine geç ⏭");return}finalText="";$("live").innerHTML="";updWc();startPrep()}
   else if(phase==="prep"){clearInterval(timer);startSpeak()} else endSpeak()};
 function startMic(){if(!SR){toast("Mikrofon desteklenmiyor — ⌨️ ile yaz");return}
   rec=new SR();rec.lang="en-US";rec.interimResults=true;rec.continuous=true;
-  rec.onresult=e=>{let it="";for(let k=e.resultIndex;k<e.results.length;k++){const r=e.results[k];
+  rec.onresult=e=>{micBounce();let it="";for(let k=e.resultIndex;k<e.results.length;k++){const r=e.results[k];
     if(r.isFinal)finalText+=r[0].transcript.trim()+". ";else it+=r[0].transcript}
     $("live").innerHTML=finalText+`<span class="interim">${it}</span>`;$("live").scrollTop=1e9;updWc()};
   rec.onerror=e=>{if(e.error==="not-allowed")toast("Mikrofon izni ver 🎙️");else if(e.error==="network")toast("İnternet gerekli")};
-  rec.onend=()=>{if(listening)try{rec.start()}catch(e){}};listening=true;rec.start()}
+  rec.onend=()=>{if(listening)try{rec.start()}catch(e){}};
+  rec.onspeechstart=()=>{document.querySelector(".micWrap").classList.add("speaking");micBounce(.15)};
+  rec.onspeechend=()=>document.querySelector(".micWrap").classList.remove("speaking");
+  listening=true;rec.start()}
 $("kb").onclick=()=>{const t=$("manual");const on=t.style.display!=="block";t.style.display=on?"block":"none";if(on)t.focus()};
 $("manual").oninput=updWc;
 $("doneBtn").onclick=()=>{if(phase!=="idle")stopAll();if(words()>=5&&!completed)complete()};
