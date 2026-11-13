@@ -752,11 +752,12 @@ function metrics(text,secs){
           fill:(text.match(FILL_RE)||[]).length,wpm:secs>8?Math.round(n/(secs/60)):null};
 }
 function runChecks(idx,text){const t=" "+text.toLowerCase().replace(/[’]/g,"'")+" ";return (CHECKS[idx]||[]).map(([l,r])=>[l,new RegExp(r,"i").test(t)])}
-async function grammar(text){
+async function grammar(text,fromSpeech){
   try{const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),8000);
     const r=await fetch("https://api.languagetool.org/v2/check",{method:"POST",body:new URLSearchParams({text,language:"en-US"}),signal:ctl.signal});
     clearTimeout(to);if(!r.ok)throw 0;const j=await r.json();
     return j.matches.filter(m=>{const c=(m.rule&&m.rule.category&&m.rule.category.id)||"";
+      if(fromSpeech&&c==="TYPOS")return false; // konuşmadan gelen metinde yazım hataları ses tanımanın, isimler de "hata" sanılıyor
       return !/TYPOGRAPHY|PUNCTUATION|CASING|TYPOS_OTHER/.test(c)&&!/UPPERCASE_SENTENCE_START|WHITESPACE|COMMA|PUNCT|EN_QUOTES|SENTENCE_FRAGMENT/.test(m.rule.id)})
       .map(m=>({bad:text.substr(m.offset,m.length),fix:(m.replacements[0]||{}).value||"",msg:m.shortMessage||m.message}));
   }catch(e){return null}
@@ -787,7 +788,7 @@ async function complete(){
   $("rXp").textContent="";$("rList").innerHTML="";$("rNext").disabled=true;
   $("status").innerHTML="✅ Tamamlandı!";ring(1,"#6CC36A");
   $("resultModal").classList.add("on");$("resultModal").querySelector(".panel").scrollTop=0;
-  const gramP=grammar(text);
+  const gramP=grammar(text,!!finalText.trim());
 
   // 1) hedef kontrol listesi
   for(const [l,ok] of chk){const d=document.createElement("div");d.className=ok?"":"no";d.innerHTML=(ok?"✅ ":"❌ ")+l;$("chkList").appendChild(d);await sleep(60);d.classList.add("in");await sleep(170)}
@@ -857,7 +858,7 @@ function resetAI(){lastAI=null;$("aiOut").innerHTML="";$("aiBtn").style.display=
 async function runAI(){
   if(aiBusy)return;const answer=lastAnswer;if(!answer){toast("Önce cevap ver 🙂");return}
   aiBusy=true;const btn=$("aiBtn");btn.style.display="none";
-  $("aiOut").innerHTML='<div class="aiLoad"><i></i>Gemma cevabını inceliyor…</div>';
+  $("aiOut").innerHTML='<div class="aiLoad"><i></i>Yapay zekâ cevabını inceliyor…</div>';
   const idx=order[pos%order.length],c=CARDS[idx];
   let r,j;
   const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),60000);
