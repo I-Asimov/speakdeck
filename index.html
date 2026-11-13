@@ -152,9 +152,17 @@ button{font:inherit;color:inherit;cursor:pointer}
 .micWrap.speaking .ripple:nth-of-type(2){animation-delay:.8s}
 @keyframes ripple{0%{transform:scale(1);opacity:.75}100%{transform:scale(1.65);opacity:0}}
 .sheet{background:var(--glass);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:3px solid #000;border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
-#live{max-height:22dvh;min-height:40px;overflow:auto;font-size:15px;font-weight:700;line-height:1.45}
-#live .interim{color:var(--muted)}
-#live:empty::before{content:"Konuşmaya başlayınca burada görünecek…";color:var(--muted);font-weight:500}
+.subs{position:relative;padding:4px 10px 0}
+.subs .wc{position:absolute;right:6px;top:-4px;font-size:11px;background:rgba(10,8,22,.55);border-radius:10px;padding:2px 8px;z-index:2}
+#live{height:clamp(78px,13dvh,104px);overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;text-align:center;
+  -webkit-mask-image:linear-gradient(transparent 0,#000 38%);mask-image:linear-gradient(transparent 0,#000 38%)}
+#live .old{font-size:14px;font-weight:800;color:#c4c0dc;opacity:.75;line-height:1.35;text-shadow:1px 1px 0 #000}
+#live .cur{font-size:clamp(18px,5vw,21px);font-weight:900;line-height:1.3;text-shadow:2px 2px 0 #000}
+#live .interim{color:#d6d2ee;font-weight:800}
+#live .nw{display:inline-block;animation:wpop .28s cubic-bezier(.2,1.5,.4,1)}
+@keyframes wpop{from{opacity:0;transform:translateY(8px) scale(.85)}to{opacity:1;transform:none}}
+#live:empty::before{content:"Konuşmaya başlayınca burada görünecek…";color:var(--muted);font-weight:600;font-size:14px;-webkit-mask-image:none}
+.subs:has(#live:empty){}
 textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line);color:var(--text);border-radius:12px;padding:10px;font:700 15px Nunito,sans-serif;resize:vertical;min-height:70px}
 .wc{font-size:12px;font-weight:800;color:var(--muted)}
 
@@ -509,9 +517,8 @@ textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line)
       </div>
       <button class="iconbtn" id="next" aria-label="Sonraki">⏭</button>
     </div>
+    <div class="subs"><span class="wc"><span id="wc">0</span> kelime</span><div id="live"></div></div>
     <div class="sheet">
-      <div class="row" style="justify-content:space-between"><span class="lbl">SÖYLEDİĞİN</span><span class="wc"><span id="wc">0</span> kelime</span></div>
-      <div id="live"></div>
       <textarea id="manual" placeholder="Mikrofon yoksa buraya yaz…"></textarea>
       <div class="row">
         <button class="iconbtn" id="kb" aria-label="Yazarak cevapla" style="border-radius:14px">⌨️</button>
@@ -949,7 +956,7 @@ let phase="idle",timer=null,left=0,total=0,rec=null,listening=false,finalText=""
 function words(){return ((finalText+" "+$("manual").value).trim().match(/[A-Za-z']+/g)||[]).length}
 function updWc(){$("wc").textContent=words();$("doneBtn").disabled=completed||words()<5}
 function ring(f,c){$("ring").style.strokeDashoffset=C*(1-f);$("ring").style.stroke=c}
-function resetRound(){finalText="";completed=false;$("live").innerHTML="";$("manual").value="";ring(0,"#F5D94E");
+function resetRound(){finalText="";completed=false;$("live").innerHTML="";subsN=0;$("manual").value="";ring(0,"#F5D94E");
   $("status").innerHTML="Kaydır ↔ · Dokun = ipucu · 🎙️ = başla";$("mic").classList.remove("live");setMicIcon("mic");document.querySelector(".micWrap").classList.remove("speaking");updWc()}
 function run(sec,col,label,end){total=left=sec;clearInterval(timer);
   const u=()=>{ring(left/total,col);$("status").innerHTML=`${label} <b>${left}s</b>`};u();
@@ -959,18 +966,26 @@ let speakT0=0,speakSecs=0;
 function startSpeak(){speakT0=performance.now();speakSecs=0;phase="speak";$("mic").classList.add("live");setMicIcon("stop");startMic();run(S.dur,"#E0605A","🎙️ Konuş!",endSpeak)}
 function endSpeak(){stopAll();if(words()>=5)complete();else{$("status").innerHTML="Biraz daha konuşmalısın (en az 5 kelime) 🙂";ring(0,"#F5D94E")}}
 function stopAll(){if(phase==="speak"&&speakT0)speakSecs+=(performance.now()-speakT0)/1000;speakT0=0;clearInterval(timer);phase="idle";listening=false;if(rec)try{rec.stop()}catch(e){}$("mic").classList.remove("live");setMicIcon("mic");document.querySelector(".micWrap").classList.remove("speaking")}
-$("mic").onclick=()=>{if(phase==="idle"){if(completed){toast("Bu kart bitti — sonrakine geç ⏭");return}finalText="";$("live").innerHTML="";updWc();startPrep()}
+$("mic").onclick=()=>{if(phase==="idle"){if(completed){toast("Bu kart bitti — sonrakine geç ⏭");return}finalText="";$("live").innerHTML="";subsN=0;updWc();startPrep()}
   else if(phase==="prep"){clearInterval(timer);startSpeak()} else endSpeak()};
 function startMic(){if(!SR){toast("Mikrofon desteklenmiyor — ⌨️ ile yaz");return}
   rec=new SR();rec.lang="en-US";rec.interimResults=true;rec.continuous=true;
   rec.onresult=e=>{micBounce();let it="";for(let k=e.resultIndex;k<e.results.length;k++){const r=e.results[k];
     if(r.isFinal)finalText+=r[0].transcript.trim()+". ";else it+=r[0].transcript}
-    $("live").innerHTML=finalText+`<span class="interim">${it}</span>`;$("live").scrollTop=1e9;updWc()};
+    renderSubs(it);updWc()};
   rec.onerror=e=>{if(e.error==="not-allowed")toast("Mikrofon izni ver 🎙️");else if(e.error==="network")toast("İnternet gerekli")};
   rec.onend=()=>{if(listening)try{rec.start()}catch(e){}};
   rec.onspeechstart=()=>{document.querySelector(".micWrap").classList.add("speaking");micBounce(.15)};
   rec.onspeechend=()=>document.querySelector(".micWrap").classList.remove("speaking");
   listening=true;rec.start()}
+let subsN=0;
+function renderSubs(it){const esc=t=>t.replace(/&/g,"&amp;").replace(/</g,"&lt;");
+  const sents=finalText.trim().split(/(?<=\.)\s+/).filter(Boolean);
+  let cur=it.trim()?"":sents.pop()||"";const old=sents.slice(-2);
+  const all=(cur+" "+it).trim().split(/\s+/).filter(Boolean),fin=cur.split(/\s+/).filter(Boolean).length;
+  const total=(finalText+" "+it).trim().split(/\s+/).filter(Boolean).length,fresh=Math.max(0,total-subsN);subsN=total;
+  const html=all.map((w,k)=>{const nw=k>=all.length-fresh?" nw":"";return k<fin?`<span class="${nw}">${esc(w)}</span>`:`<span class="interim${nw}">${esc(w)}</span>`}).join(" ");
+  $("live").innerHTML=old.map(x=>`<div class="old">${esc(x)}</div>`).join("")+(html?`<div class="cur">${html}</div>`:"")}
 $("kb").onclick=()=>{const t=$("manual");const on=t.style.display!=="block";t.style.display=on?"block":"none";if(on)t.focus()};
 $("manual").oninput=updWc;
 $("doneBtn").onclick=()=>{if(phase!=="idle")stopAll();if(words()>=5&&!completed)complete()};
