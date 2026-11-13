@@ -5,7 +5,7 @@ Konuşma cevaplarını yapay zekâ ile değerlendiren Cloudflare Worker.
 - `POST /evaluate` → cevabı değerlendirir, günlük ⚡ enerjiden 1 düşer
 - `GET /energy?d=<cihazId>` → kalan enerji
 
-**Sağlayıcılar:** önce Gemini API (Gemma 4 26B), hata olursa Cloudflare Workers AI (Gemma 4 26B).
+**Sağlayıcılar (sırayla):** Gemini API Gemma 4 → Gemini API Flash-Lite → Workers AI Mistral Small 3.1 → Workers AI Gemma 4.
 **Koruma:** cihaz başına günlük enerji (KV), IP başına günlük üst sınır, CORS izin listesi, girdi doğrulama, JSON çıktı doğrulama.
 Yapay zekâ ulaşılamazsa enerji düşmez.
 
@@ -25,7 +25,8 @@ Yapay zekâ ulaşılamazsa enerji düşmez.
 | Ad | Varsayılan |
 |---|---|
 | `GEMINI_MODEL` | `gemma-4-26b-a4b-it` |
-| `CF_MODEL` | `@cf/google/gemma-4-26b-a4b-it` |
+| `CF_MODEL` | `@cf/mistralai/mistral-small-3.1-24b-instruct` |
+| `CF_MODEL_2` | `@cf/google/gemma-4-26b-a4b-it` |
 | `DAILY_ENERGY` | `5` |
 | `IP_DAILY_MAX` | `40` |
 | `ALLOWED_ORIGINS` | `https://i-asimov.github.io` |

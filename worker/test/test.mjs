@@ -27,7 +27,7 @@ function makeEnv({ geminiMode = "ok", aiMode = "ok", key = "k" } = {}) {
     GEMINI_KEY: key || undefined,
     KV: { get: async k => store.get(k) ?? null, put: async (k, v) => { store.set(k, v); } },
     AI: { run: async (model, input) => {
-      assert.equal(model, "@cf/google/gemma-4-26b-a4b-it");
+      assert.ok(["@cf/mistralai/mistral-small-3.1-24b-instruct", "@cf/google/gemma-4-26b-a4b-it"].includes(model));
       if (aiMode === "fail") throw new Error("ai down");
       return { response: JSON.stringify({ ...GOOD, native_version: "from workers ai" }) };
     } },
@@ -137,6 +137,29 @@ await t("/health iki sağlayıcıyı da raporlar", async () => {
   globalThis.fetch = async () => ({ ok: false, status: 403, text: async () => "API key not valid" });
   const j = await (await worker.fetch(req("/health"), env)).json();
   assert.equal(j.gemini.ok, false); assert.ok(j.gemini.error.includes("403")); assert.equal(j.workers_ai.ok, true); assert.equal(j.kv_binding, true);
+});
+await t("Gemma 500 → Flash-Lite'a geçer (JSON modu ile)", async () => {
+  const env = makeEnv(); let flashBody = null;
+  globalThis.fetch = async (url, opts) => {
+    const u = String(url);
+    if (u.includes("/models?")) return { ok: true, json: async () => ({ models: [
+      { name: "models/gemini-2.5-flash-lite", supportedGenerationMethods: ["generateContent"] },
+      { name: "models/gemini-3.1-flash-lite", supportedGenerationMethods: ["generateContent"] },
+      { name: "models/gemini-3.1-flash-lite-preview", supportedGenerationMethods: ["generateContent"] } ] }) };
+    if (u.includes("gemma")) return { ok: false, status: 500, text: async () => "internal" };
+    flashBody = { url: u, body: JSON.parse(opts.body) };
+    return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: JSON.stringify(GOOD) }] } }] }) };
+  };
+  const j = await (await worker.fetch(req("/evaluate", { method: "POST", body: evalBody() }), env)).json();
+  assert.equal(j.provider, "gemini-flash-lite");
+  assert.ok(flashBody.url.includes("gemini-3.1-flash-lite:generateContent"));
+  assert.equal(flashBody.body.generationConfig.responseMimeType, "application/json");
+});
+await t("Workers AI boş cevap → Gemma yedeğine geçer", async () => {
+  const env = makeEnv({ geminiMode: "http500" }); const seen = [];
+  env.AI.run = async (model) => { seen.push(model); if (model.includes("mistral")) return { response: "" }; return { response: JSON.stringify(GOOD) }; };
+  const j = await (await worker.fetch(req("/evaluate", { method: "POST", body: evalBody() }), env)).json();
+  assert.equal(j.provider, "workers-ai-gemma"); assert.ok(seen.some(m => m.includes("mistral")));
 });
 await t("404 bilinmeyen yol", async () => {
   assert.equal((await worker.fetch(req("/nope"), makeEnv())).status, 404);

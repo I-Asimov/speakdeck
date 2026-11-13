@@ -4,14 +4,15 @@
  * POST /evaluate  → konuşma cevabını değerlendirir (⚡ 1 enerji harcar)
  * GET  /energy    → kalan günlük enerjiyi döndürür
  *
- * Sağlayıcı sırası: 1) Gemini API (Gemma 4)  2) Cloudflare Workers AI (Gemma 4)
+ * Sağlayıcı sırası: 1) Gemini API Gemma 4  2) Gemini API Flash-Lite  3) Workers AI Mistral Small  4) Workers AI Gemma 4
  * Gerekli bağlamalar (bindings):
  *   AI          → Workers AI
  *   KV          → KV namespace (enerji sayaçları)
  *   GEMINI_KEY  → secret (Google AI Studio anahtarı)
  * İsteğe bağlı değişkenler:
  *   GEMINI_MODEL   (varsayılan: gemma-4-26b-a4b-it)
- *   CF_MODEL       (varsayılan: @cf/google/gemma-4-26b-a4b-it)
+ *   CF_MODEL       (varsayılan: @cf/mistralai/mistral-small-3.1-24b-instruct — düşünmeyen, hızlı)
+ *   CF_MODEL_2     (varsayılan: @cf/google/gemma-4-26b-a4b-it — son çare)
  *   DAILY_ENERGY   (varsayılan: 5)
  *   IP_DAILY_MAX   (varsayılan: 40)
  *   ALLOWED_ORIGINS(virgülle ayrılmış; varsayılan: https://i-asimov.github.io)
@@ -19,7 +20,8 @@
 
 const DEFAULTS = {
   GEMINI_MODEL: "gemma-4-26b-a4b-it",
-  CF_MODEL: "@cf/google/gemma-4-26b-a4b-it",
+  CF_MODEL: "@cf/mistralai/mistral-small-3.1-24b-instruct",
+  CF_MODEL_2: "@cf/google/gemma-4-26b-a4b-it",
   DAILY_ENERGY: 5,
   IP_DAILY_MAX: 40,
   ALLOWED_ORIGINS: "https://i-asimov.github.io",
@@ -135,40 +137,60 @@ function normalize(o) {
 /* ------------------------------------------------------------------ */
 /* Sağlayıcılar                                                         */
 /* ------------------------------------------------------------------ */
-async function geminiRequest(env, model, prompt, maxTokens) {
+async function geminiRequest(env, model, prompt, maxTokens, jsonMode) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
-  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 25000);
+  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 20000);
+  const generationConfig = { temperature: 0.2, maxOutputTokens: maxTokens };
+  if (jsonMode) generationConfig.responseMimeType = "application/json";
   try {
     return await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_KEY },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.2, maxOutputTokens: maxTokens },
-      }),
+      body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig }),
       signal: ctl.signal,
     });
   } finally { clearTimeout(t); }
 }
 
-// Model adı yanlışsa (404) hesabın erişebildiği Gemma 4 modelini bulur ve KV'de saklar
-async function discoverGeminiModel(env) {
+async function listGeminiModels(env) {
   const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200", { headers: { "x-goog-api-key": env.GEMINI_KEY } });
   if (!r.ok) throw new Error("gemini_list_http_" + r.status);
-  const names = ((await r.json()).models || [])
+  return ((await r.json()).models || [])
     .filter(m => (m.supportedGenerationMethods || []).includes("generateContent"))
     .map(m => String(m.name).replace(/^models\//, ""));
+}
+
+// Model adı yanlışsa (404) hesabın erişebildiği Gemma 4 modelini bulur ve KV'de saklar
+async function discoverGeminiModel(env) {
+  const names = await listGeminiModels(env);
   const pick = names.find(n => /gemma-4/.test(n) && /26b/.test(n)) || names.find(n => /gemma-4/.test(n)) || names.find(n => /gemma/.test(n));
   if (!pick) throw new Error("gemini_no_gemma_model");
   await env.KV.put("cfg:gemini_model", pick);
   return pick;
 }
 
-async function geminiText(env, prompt, maxTokens = 2048) {
+// En yeni "flash-lite" modelini bulur (bedava planda kotası olan hızlı model)
+async function discoverFlashLite(env) {
+  const cached = await env.KV.get("cfg:flash_lite");
+  if (cached) return cached;
+  const names = (await listGeminiModels(env)).filter(n => /flash-lite/.test(n) && !/preview|exp|tts|image|audio|live/.test(n));
+  const ver = n => parseFloat((n.match(/gemini-(\d+(?:\.\d+)?)/) || [])[1] || "0");
+  names.sort((a, b) => ver(b) - ver(a));
+  if (!names.length) throw new Error("gemini_no_flash_lite");
+  await env.KV.put("cfg:flash_lite", names[0], { expirationTtl: 60 * 60 * 24 * 7 });
+  return names[0];
+}
+
+async function geminiText(env, prompt, maxTokens = 1500) {
   if (!env.GEMINI_KEY) throw new Error("no_gemini_key");
   let model = (await env.KV.get("cfg:gemini_model")) || cfg(env, "GEMINI_MODEL");
-  let r = await geminiRequest(env, model, prompt, maxTokens);
-  if (r.status === 404) { model = await discoverGeminiModel(env); r = await geminiRequest(env, model, prompt, maxTokens); }
+  let r = await geminiRequest(env, model, prompt, maxTokens, false);
+  if (r.status === 404) { model = await discoverGeminiModel(env); r = await geminiRequest(env, model, prompt, maxTokens, false); }
+  if (r.status === 500) r = await geminiRequest(env, model, prompt, 1024, false); // bir kez daha, daha kısa
+  return readGemini(r, model);
+}
+
+async function readGemini(r, model) {
   if (!r.ok) throw new Error(`gemini_http_${r.status}:${(await r.text()).slice(0, 160)}`);
   const j = await r.json();
   const parts = j.candidates?.[0]?.content?.parts || [];
@@ -177,23 +199,45 @@ async function geminiText(env, prompt, maxTokens = 2048) {
   return { text, model };
 }
 
+async function flashLiteText(env, prompt, maxTokens = 1500) {
+  if (!env.GEMINI_KEY) throw new Error("no_gemini_key");
+  const model = await discoverFlashLite(env);
+  return readGemini(await geminiRequest(env, model, prompt, maxTokens, true), model);
+}
+
+async function callFlashLite(env, prompt) {
+  const { text } = await flashLiteText(env, prompt);
+  return normalize(extractJson(text));
+}
+
 async function callGemini(env, prompt) {
   const { text } = await geminiText(env, prompt);
   return normalize(extractJson(text));
 }
 
-async function workersAIText(env, prompt, maxTokens = 2048) {
+function withTimeout(promise, ms, label) {
+  let t; return Promise.race([promise, new Promise((_, rej) => { t = setTimeout(() => rej(new Error(label + "_timeout")), ms); })]).finally(() => clearTimeout(t));
+}
+
+async function workersAIText(env, prompt, maxTokens = 1500, model = cfg(env, "CF_MODEL")) {
   if (!env.AI) throw new Error("no_ai_binding");
   const base = { messages: [{ role: "user", content: prompt }], temperature: 0.2, max_tokens: maxTokens };
   let res;
-  try { res = await env.AI.run(cfg(env, "CF_MODEL"), { ...base, response_format: { type: "json_object" } }); }
-  catch (e) { res = await env.AI.run(cfg(env, "CF_MODEL"), base); }
-  const payload = res?.response ?? res?.choices?.[0]?.message?.content ?? res;
-  return typeof payload === "string" ? payload : JSON.stringify(payload);
+  try { res = await withTimeout(env.AI.run(model, { ...base, response_format: { type: "json_object" } }), 25000, "workers_ai"); }
+  catch (e) { if (/timeout/.test(e.message)) throw e; res = await withTimeout(env.AI.run(model, base), 25000, "workers_ai"); }
+  const msg = res?.choices?.[0]?.message;
+  const payload = res?.response ?? msg?.content ?? res;
+  const text = typeof payload === "string" ? payload : JSON.stringify(payload);
+  if (!text || text === "null" || text === '""') throw new Error("workers_ai_empty" + (msg?.reasoning_content ? "_only_reasoning" : ""));
+  return text;
 }
 
 async function callWorkersAI(env, prompt) {
   return normalize(extractJson(await workersAIText(env, prompt)));
+}
+
+async function callWorkersAI2(env, prompt) {
+  return normalize(extractJson(await workersAIText(env, prompt, 3000, cfg(env, "CF_MODEL_2"))));
 }
 
 /* ------------------------------------------------------------------ */
@@ -229,7 +273,12 @@ async function handleEvaluate(request, env, headers) {
   const prompt = buildPrompt({ situation, goal, checks, answer, fromSpeech: !!fromSpeech });
 
   let result = null, provider = null; const tried = [];
-  const providers = [{ name: "gemini", run: callGemini }, { name: "workers-ai", run: callWorkersAI }];
+  const providers = [
+    { name: "gemini", run: callGemini },
+    { name: "gemini-flash-lite", run: callFlashLite },
+    { name: "workers-ai", run: callWorkersAI },
+    { name: "workers-ai-gemma", run: callWorkersAI2 },
+  ];
   for (const p of providers) {
     try { result = await p.run(env, prompt); provider = p.name; break; }
     catch (e) { tried.push(`${p.name}:${e.message}`); }
@@ -259,7 +308,9 @@ async function handleHealth(request, env, headers) {
     const ep = buildPrompt({ situation: "İnternetten verdiğin sipariş 2 haftadır gelmedi, müşteri hizmetlerini aradın.",
       goal: "Sorunu anlat, ne zaman geleceğini sor.", checks: ["Siparişten bahsettin", "Ne zaman geleceğini sordun"],
       answer: "hi my order didn't came for two weeks can you check what is going on", fromSpeech: true });
-    for (const [name, fn] of [["gemini_eval", async () => (await geminiText(env, ep)).text], ["workers_ai_eval", () => workersAIText(env, ep)]]) {
+    for (const [name, fn] of [["gemini_gemma_eval", async () => (await geminiText(env, ep)).text],
+                              ["gemini_flash_lite_eval", async () => (await flashLiteText(env, ep)).text],
+                              ["workers_ai_eval", () => workersAIText(env, ep)]]) {
       const t = Date.now(); let raw = "";
       try { raw = await fn(); normalize(extractJson(raw)); out[name] = { ok: true, ms: Date.now() - t }; }
       catch (e) { out[name] = { ok: false, ms: Date.now() - t, error: String(e.message).slice(0, 200), raw_start: String(raw).slice(0, 300), raw_end: String(raw).slice(-200) }; }
