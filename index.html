@@ -110,11 +110,11 @@ button{font:inherit;color:inherit;cursor:pointer}
 .chip{flex:none;border:3px solid #000;background:var(--glass);color:var(--muted);border-radius:20px;padding:6px 12px;font-weight:800;font-size:13px}
 .chip.on{background:var(--text);color:#111}
 .deck{position:relative;flex:1 1 auto;min-height:clamp(220px,42dvh,440px);display:grid;place-items:center;perspective:1200px}
-.card{position:absolute;width:min(86%,360px);height:min(94%,420px);border-radius:26px;border:3px solid #000;box-shadow:0 7px 0 #000;transition:transform .35s cubic-bezier(.2,.8,.3,1.2),opacity .3s;touch-action:pan-y;user-select:none;cursor:grab;overflow:hidden}
-.card .float{width:100%;height:100%;animation:bob 3.2s ease-in-out infinite}
+.card{position:absolute;width:min(86%,360px);height:min(94%,420px);transition:transform .35s cubic-bezier(.2,.8,.3,1.2),opacity .3s;touch-action:pan-y;user-select:none;cursor:grab;transform-style:preserve-3d}
+.card .float{width:100%;height:100%;animation:bob 3.2s ease-in-out infinite;transform-style:preserve-3d}
 .card .inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .5s}
 .card.flipped .inner{transform:rotateY(180deg)}
-.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;padding:clamp(16px,4.5vw,22px);display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;padding:clamp(16px,4.5vw,22px);display:flex;flex-direction:column;gap:10px;overflow:hidden;border:3px solid #000;border-radius:26px;box-shadow:0 7px 0 #000}
 .front{color:#111}
 .front::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.33) 45%,transparent 60%);background-size:250% 100%;animation:shine 4.5s ease-in-out infinite}
 @keyframes shine{0%,60%{background-position:120% 0}100%{background-position:-60% 0}}
