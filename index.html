@@ -879,21 +879,23 @@ async function grammar(text,fromSpeech){
       .map(m=>({bad:text.substr(m.offset,m.length),fix:(m.replacements[0]||{}).value||"",msg:m.shortMessage||m.message}));
   }catch(e){return null}
 }
+function fluencyScore(m){const parts=[];if(m.wpm!=null)parts.push(Math.min(1,m.wpm/100));
+  parts.push(Math.min(1,m.uniq/65));parts.push(Math.max(0,1-m.fill/Math.max(1,m.words/15)));
+  return parts.reduce((a,b)=>a+b,0)/parts.length}
+function combine(goalS,gramS,fluS){const t=gramS==null?goalS*.6+fluS*.4:goalS*.5+gramS*.25+fluS*.25;return Math.round(t*100)}
 function score(chk,gram,m){
   const goalS=chk.length?chk.filter(c=>c[1]).length/chk.length:1;
-  const parts=[];if(m.wpm!=null)parts.push(Math.min(1,m.wpm/100));
-  parts.push(Math.min(1,m.uniq/65));parts.push(Math.max(0,1-m.fill/Math.max(1,m.words/15)));
-  const fluS=parts.reduce((a,b)=>a+b,0)/parts.length;
   const gramS=gram==null?null:Math.max(0,1-gram.length/Math.max(1,m.words/10));
-  const t=gramS==null?goalS*.6+fluS*.4:goalS*.5+gramS*.25+fluS*.25;
-  return Math.round(t*100);
+  return combine(goalS,gramS,fluencyScore(m));
 }
+const STAR_LABELS=["Isınmaya devam 💪","İyi başlangıç 👍","Çok iyi! 🔥","Mükemmel! 🏆"];
+const starsFor=sc=>sc>=85?3:sc>=65?2:sc>=40?1:0;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 function countUp(el,to,ms,suffix=""){const t0=performance.now();return new Promise(res=>{(function f(){const k=Math.min(1,(performance.now()-t0)/ms);
   el.textContent=Math.round(to*(1-Math.pow(1-k,3)))+suffix;if(k<1)requestAnimationFrame(f);else res()})()})}
 function esc(t){return t.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
 
-let lastAnswer="",lastFromSpeech=false;
+let lastAnswer="",lastFromSpeech=false,lastEval=null;
 async function complete(){
   completed=true;updWc();
   const text=(finalText+" "+$("manual").value).trim();lastAnswer=text;lastFromSpeech=!!finalText.trim();resetAI();
@@ -927,12 +929,12 @@ async function complete(){
     $("gramList").appendChild(d);await sleep(40);d.classList.add("in");await sleep(150)}
 
   // 4) toplam puan + yıldızlar
-  const sc=score(chk,gram,m), stars=sc>=85?3:sc>=65?2:sc>=40?1:0;
+  const sc=score(chk,gram,m), stars=starsFor(sc);
   $("scFg").style.transition="stroke-dashoffset 1.1s cubic-bezier(.2,.8,.3,1)";$("scFg").style.stroke=sc>=85?"#6CC36A":sc>=65?"#F5D94E":"#F0A44B";
   requestAnimationFrame(()=>$("scFg").style.strokeDashoffset=326.7*(1-sc/100));
   await countUp($("scN"),sc,1100);
   for(let i=0;i<stars;i++){$("stars").children[i].classList.add("on");await sleep(220)}
-  $("scLbl").textContent=["Isınmaya devam 💪","İyi başlangıç 👍","Çok iyi! 🔥","Mükemmel! 🏆"][stars];
+  $("scLbl").textContent=STAR_LABELS[stars];
 
   // 5) XP + seri + rozet
   const before=levelInfo(S.xp).l, lines=[];
@@ -944,6 +946,7 @@ async function complete(){
   S.xp+=xp;S.totalCards++;S.totalWords+=m.words;S.maxWords=Math.max(S.maxWords,m.words);
   if(!S.catsDone.includes(cur()[0]))S.catsDone.push(cur()[0]);
   S.sessions.push({d:today(),sc,wpm:m.wpm,uniq:m.uniq,fill:m.fill,len:m.avgLen,w:m.words,g:gram==null?null:gram.length});
+  lastEval={m,sc,gram,session:S.sessions[S.sessions.length-1]};
   if(S.sessions.length>300)S.sessions=S.sessions.slice(-300);
   const after=levelInfo(S.xp).l;if(after>before)lines.push(`⭐ SEVİYE ATLADIN: Sv. ${after}!`);
   checkBadges().forEach(b=>lines.push("🏅 Yeni rozet: "+b));
@@ -1006,6 +1009,31 @@ async function renderAI(R,answer){
   if(R.phrases.length)parts.push(sec("📌 KALIPLAR",R.phrases.map(p=>`<div class="aiCard">${esc(p.en)} <button class="say" data-say="${esc(p.en)}">🔊</button><div class="sub">${esc(p.tr)}</div></div>`).join("")));
   if(R.encouragement_tr)parts.push(sec("",`<div class="aiCard" style="text-align:center">${esc(R.encouragement_tr)}</div>`));
   for(const p of parts){await sleep(40);p.classList.add("in");await sleep(150)}
+  applyAI(R);
+}
+function applyAI(R){
+  if(!lastEval)return;const m=lastEval.m;
+  // hedef: yapay zekânın kararı (anlamı anlıyor)
+  if(R.goal.length){
+    $("chkList").innerHTML=R.goal.map(g=>{const k={done:["✅",""],partial:["🟡",""],missing:["❌","no"]}[g.status];
+      return `<div class="in ${k[1]}">${k[0]} ${esc(g.item)}</div>`}).join("")+'<div class="in" style="background:none;border:0;padding:2px 0;font-size:12px;color:var(--muted)">✨ yapay zekâya göre güncellendi</div>';
+  }
+  // dilbilgisi: kuralların kaçırdığını göster
+  const n=R.errors.length,lt=lastEval.gram;
+  if(n&&lt&&!lt.length)$("gramList").innerHTML=`<div class="in">🔎 LanguageTool hata bulamadı ama <b>yapay zekâ ${n} hata buldu</b> ↓ aşağıda.</div>`;
+  else if(n&&lt&&lt.length<n)$("gramList").insertAdjacentHTML("beforeend",`<div class="in">🔎 Yapay zekâ toplam <b>${n} hata</b> buldu ↓</div>`);
+  // puan
+  const goalS=R.goal.length?R.goal.reduce((a,g)=>a+({done:1,partial:.5,missing:0}[g.status]),0)/R.goal.length:null;
+  const gramS=Math.max(0,1-n/Math.max(1,m.words/10));
+  const old=lastEval.sc,sc=combine(goalS==null?1:goalS,gramS,fluencyScore(m)),stars=starsFor(sc);
+  if(sc===old)return;
+  lastEval.sc=sc;if(lastEval.session){lastEval.session.sc=sc;lastEval.session.ai=1;save()}
+  $("scFg").style.stroke=sc>=85?"#6CC36A":sc>=65?"#F5D94E":"#F0A44B";$("scFg").style.strokeDashoffset=326.7*(1-sc/100);
+  countUp($("scN"),sc,900);
+  [...$("stars").children].forEach((x,i)=>x.classList.toggle("on",i<stars));
+  $("scLbl").innerHTML=`${STAR_LABELS[stars]}<div style="font-size:12px;color:var(--muted);margin-top:4px;font-family:Nunito,sans-serif">✨ Yapay zekâya göre güncellendi: ${old} → ${sc}</div>`;
+  $("resultModal").querySelector(".panel").scrollTo({top:0,behavior:"smooth"});
+  toast(`Puan güncellendi: ${old} → ${sc}`);
 }
 $("aiOut").addEventListener("click",e=>{const b=e.target.closest("[data-say]");if(b)speak(b.dataset.say)});
 $("aiBtn").onclick=runAI;
