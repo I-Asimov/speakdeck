@@ -232,5 +232,3 @@ export default {
   },
 };
 
-// testler için
-export const _internal = { buildPrompt, extractJson, normalize };
