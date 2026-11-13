@@ -866,7 +866,7 @@ const ACT_ICON={complain:"😤",request:"🙏",refuse:"✋",persuade:"🗣️",a
 function wpick(items,w){const tot=w.reduce((a,b)=>a+b,0);if(tot<=0)return items[Math.floor(Math.random()*items.length)];let r=Math.random()*tot;for(let i=0;i<items.length;i++){r-=w[i];if(r<=0)return items[i]}return items[items.length-1]}
 function recent(list,id,k){const i=list.lastIndexOf(id);if(i<0)return 1;const ago=list.length-i;return ago<=k?0.03+0.97*(ago/(k+1))**3:1}
 function genCard(opts={}){
-  const gh=S.gh||(S.gh={s:[],p:[],c:[],a:[]}),lv=levelInfo(S.xp).l,as=S.actStats||{};
+  if(!S.gh||!S.gh.a)S.gh={s:[],p:[],c:[],a:[]};if(!S.actStats)S.actStats={};const gh=S.gh,lv=levelInfo(S.xp).l,as=S.actStats;
   // 1) tohum: tekrar cezası + zayıf eyleme ağırlık
   const seed=wpick(SEEDS,SEEDS.map(s=>{const st=as[s[2]];const weak=st?Math.max(.5,Math.min(2.2,1+(72-st)/40)):1.3;
     return recent(gh.s,s[0],20)*recent(gh.a,s[2],2)*weak*(s[8]<=1+lv/2?1:.35)}));
@@ -962,7 +962,7 @@ function checkBadges(){const n=[];BADGES.forEach(([id,ic,name,desc,f])=>{const [
 function show(id){document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("on",s.id===id));window.scrollTo(0,0);
   if(id==="landing"||id==="progress")renderLanding();
   const nav=["landing","progress","achievements","stats","account"];$("bnav").classList.toggle("on",nav.includes(id));
-  [...$("bnav").children].forEach(b=>b.classList.toggle("on",(b.dataset.go||"landing")===id)); if(id==="play"){renderHud();renderRun();updateCatIcon()} if(id==="onboard")requestAnimationFrame(obDots); if(id==="achievements")renderAch(); if(id==="stats")renderStats(); if(id==="account")renderAccount();}
+  [...$("bnav").children].forEach(b=>b.classList.toggle("on",(b.dataset.go||"landing")===id)); if(id==="play"){if(genMode()!==!!GEN[order[pos%order.length]])shuffle();renderHud();renderRun();updateCatIcon()} if(id==="onboard")requestAnimationFrame(obDots); if(id==="achievements")renderAch(); if(id==="stats")renderStats(); if(id==="account")renderAccount();}
 function route(){const h=location.hash.slice(1);
   if(h==="play")show("play"); else if(h==="intro")show("onboard"); else if(h==="achievements")show("achievements"); else if(h==="stats")show("stats"); else if(h==="account")show("account"); else if(h==="progress")show("progress"); else show("landing")}
 addEventListener("hashchange",route);
