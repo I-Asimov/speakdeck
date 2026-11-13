@@ -152,17 +152,21 @@ button{font:inherit;color:inherit;cursor:pointer}
 .micWrap.speaking .ripple:nth-of-type(2){animation-delay:.8s}
 @keyframes ripple{0%{transform:scale(1);opacity:.75}100%{transform:scale(1.65);opacity:0}}
 .sheet{background:var(--glass);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:3px solid #000;border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
-.subs{position:relative;padding:4px 10px 0}
-.subs .wc{position:absolute;right:6px;top:-4px;font-size:11px;background:rgba(10,8,22,.55);border-radius:10px;padding:2px 8px;z-index:2}
-#live{height:clamp(78px,13dvh,104px);overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;text-align:center;
-  -webkit-mask-image:linear-gradient(transparent 0,#000 38%);mask-image:linear-gradient(transparent 0,#000 38%)}
+.subs{position:relative;border-radius:16px;background:rgba(0,0,0,.28);border:2px solid rgba(255,255,255,.08);padding:22px 10px 8px;transition:border-color .25s,background .25s}
+.subs.empty{border:2px dashed rgba(255,255,255,.18);background:rgba(0,0,0,.18)}
+.subs.on{border-color:rgba(234,95,83,.75);background:rgba(40,10,14,.35)}
+.subLbl{position:absolute;left:10px;top:5px;font-size:10px;font-weight:900;letter-spacing:.08em;color:var(--muted)}
+.subs.on .subLbl{color:#ffb4ae}
+.subs .wc{position:absolute;right:10px;top:4px;font-size:11px}
+#live{height:clamp(70px,11dvh,96px);overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;text-align:center;
+  -webkit-mask-image:linear-gradient(transparent 0,#000 35%);mask-image:linear-gradient(transparent 0,#000 35%)}
+.subs.empty #live{-webkit-mask-image:none;mask-image:none;justify-content:center}
 #live .old{font-size:14px;font-weight:800;color:#c4c0dc;opacity:.75;line-height:1.35;text-shadow:1px 1px 0 #000}
 #live .cur{font-size:clamp(18px,5vw,21px);font-weight:900;line-height:1.3;text-shadow:2px 2px 0 #000}
 #live .interim{color:#d6d2ee;font-weight:800}
 #live .nw{display:inline-block;animation:wpop .28s cubic-bezier(.2,1.5,.4,1)}
 @keyframes wpop{from{opacity:0;transform:translateY(8px) scale(.85)}to{opacity:1;transform:none}}
-#live:empty::before{content:"Konuşmaya başlayınca burada görünecek…";color:var(--muted);font-weight:600;font-size:14px;-webkit-mask-image:none}
-.subs:has(#live:empty){}
+#live:empty::before{content:"🎙️'a bas ve konuş — söylediklerin burada altyazı gibi akacak";color:var(--muted);font-weight:700;font-size:13.5px;padding:0 10px}
 textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line);color:var(--text);border-radius:12px;padding:10px;font:700 15px Nunito,sans-serif;resize:vertical;min-height:70px}
 .wc{font-size:12px;font-weight:800;color:var(--muted)}
 
@@ -517,8 +521,8 @@ textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line)
       </div>
       <button class="iconbtn" id="next" aria-label="Sonraki">⏭</button>
     </div>
-    <div class="subs"><span class="wc"><span id="wc">0</span> kelime</span><div id="live"></div></div>
     <div class="sheet">
+    <div class="subs empty" id="subs"><span class="subLbl">🎙️ ALTYAZI</span><span class="wc"><span id="wc">0</span> kelime</span><div id="live"></div></div>
       <textarea id="manual" placeholder="Mikrofon yoksa buraya yaz…"></textarea>
       <div class="row">
         <button class="iconbtn" id="kb" aria-label="Yazarak cevapla" style="border-radius:14px">⌨️</button>
@@ -979,6 +983,8 @@ function startMic(){if(!SR){toast("Mikrofon desteklenmiyor — ⌨️ ile yaz");
   rec.onspeechend=()=>document.querySelector(".micWrap").classList.remove("speaking");
   listening=true;rec.start()}
 let subsN=0;
+new MutationObserver(()=>$("subs").classList.toggle("empty",!$("live").innerHTML.trim())).observe($("live"),{childList:true});
+setInterval(()=>$("subs").classList.toggle("on",typeof phase!=="undefined"&&phase==="speak"),300);
 function renderSubs(it){const esc=t=>t.replace(/&/g,"&amp;").replace(/</g,"&lt;");
   const sents=finalText.trim().split(/(?<=\.)\s+/).filter(Boolean);
   let cur=it.trim()?"":sents.pop()||"";const old=sents.slice(-2);
