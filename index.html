@@ -225,6 +225,25 @@ textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line)
   .miniStats{display:flex;gap:14px;flex-wrap:wrap;font-weight:800;font-size:13px;color:var(--muted)}
   .miniStats b{color:var(--text);font-size:16px}
 
+
+  .aiBox{border:3px solid #000;border-radius:18px;padding:12px;background:linear-gradient(135deg,rgba(183,156,224,.22),rgba(95,143,217,.18));display:flex;flex-direction:column;gap:10px}
+  .aiBtn{background:var(--purple);color:#140f22;width:100%}
+  .aiBtn small{font-size:12px;opacity:.75}
+  .aiLoad{display:flex;align-items:center;gap:10px;font-weight:800}
+  .aiLoad i{width:22px;height:22px;border-radius:50%;border:3px solid #000;border-top-color:var(--yellow);animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .aiSec{opacity:0;transform:translateY(8px);transition:all .35s;display:flex;flex-direction:column;gap:6px}
+  .aiSec.in{opacity:1;transform:none}
+  .aiSec h4{margin:0;font-size:12px;font-weight:900;color:var(--muted);letter-spacing:.6px}
+  .aiCard{background:#1d1a33;border:2px solid #000;border-radius:12px;padding:9px 11px;font-weight:700;font-size:14px;line-height:1.45}
+  .aiCard .sub{font-size:12px;color:var(--muted);margin-top:3px;font-weight:700}
+  .diff del{color:#ff8f86;text-decoration:line-through;text-decoration-thickness:2px}
+  .diff ins{color:#7fe07c;text-decoration:none;background:rgba(108,195,106,.15);border-radius:4px;padding:0 2px}
+  .lvl{display:inline-block;background:var(--yellow);color:#111;border:2px solid #000;border-radius:10px;padding:2px 10px;font-weight:900;font-size:14px}
+  .say{border:0;background:none;font-size:18px;padding:0 4px;cursor:pointer}
+  .gd{color:var(--green)}.gp{color:var(--orange)}.gm{color:#ff8f86}
+  .aiErr{font-weight:800;color:#ffd1cc;background:#3a1d22;border:2px solid #000;border-radius:12px;padding:10px}
+
 /* ---- GENİŞ EKRAN ---- */
 @media (min-width:900px){
   #landing .wrap{max-width:980px;display:grid;grid-template-columns:1.1fr 1fr;grid-template-areas:"top top" "hero stats" "hero side";grid-template-rows:auto auto 1fr;gap:22px 34px;align-items:start}
@@ -250,6 +269,7 @@ textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line)
     <div class="topbar">
       <span class="pill px" id="lvlPill">⭐ Sv. 1</span>
       <div class="row">
+        <span class="pill" title="Yapay zekâ enerjisi">⚡ <span class="eN">–</span></span>
         <span class="pill" title="Seri dondurucu">🧊 <span id="freezeN">0</span></span>
         <button class="iconbtn" id="openSettings" aria-label="Ayarlar">⚙️</button>
       </div>
@@ -366,7 +386,7 @@ textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line)
       <button class="iconbtn" id="home" aria-label="Ana ekran">🏠</button>
       <div class="grow">
         <div class="row" style="justify-content:space-between;font-weight:900;font-size:13px;margin-bottom:4px">
-          <span class="px">Sv. <span id="hLvl">1</span></span><span>🔥 <span id="hStreak">0</span> · 🎯 <span id="hToday">0</span>/<span id="hGoal">3</span></span>
+          <span class="px">Sv. <span id="hLvl">1</span></span><span>⚡ <span class="eN">–</span> · 🔥 <span id="hStreak">0</span> · 🎯 <span id="hToday">0</span>/<span id="hGoal">3</span></span>
         </div>
         <div class="xpmini"><i id="hXp"></i></div>
       </div>
@@ -409,6 +429,10 @@ textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line)
   <div class="sec"><div class="lbl">🗣️ AKICILIK</div><div class="tiles" id="tiles"></div></div>
   <div class="reward px" id="rXp">+0 XP</div>
   <div class="rlist" id="rList"></div>
+  <div class="aiBox" id="aiBox">
+    <button class="btn px aiBtn" id="aiBtn">✨ Yapay zekâ ile detaylı değerlendir <small>(⚡1)</small></button>
+    <div id="aiOut"></div>
+  </div>
   <div class="row"><button class="btn" id="rStats" style="flex:1">📈</button><button class="btn y px" id="rCopy" style="flex:4">📋 Claude'a düzelttir</button></div>
   <button class="btn g px" id="rNext">Sonraki kart ▸</button>
 </div></div>
@@ -751,10 +775,10 @@ function countUp(el,to,ms,suffix=""){const t0=performance.now();return new Promi
   el.textContent=Math.round(to*(1-Math.pow(1-k,3)))+suffix;if(k<1)requestAnimationFrame(f);else res()})()})}
 function esc(t){return t.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
 
-let lastAnswer="";
+let lastAnswer="",lastFromSpeech=false;
 async function complete(){
   completed=true;updWc();
-  const text=(finalText+" "+$("manual").value).trim();lastAnswer=text;
+  const text=(finalText+" "+$("manual").value).trim();lastAnswer=text;lastFromSpeech=!!finalText.trim();resetAI();
   const idx=order[pos%order.length], m=metrics(text,speakSecs), chk=runChecks(idx,text);
   // modal: başlangıç durumu
   $("scN").textContent="0";$("scFg").style.transition="none";$("scFg").style.strokeDashoffset=326.7;
@@ -813,6 +837,58 @@ async function complete(){
 }
 $("rNext").onclick=()=>{$("resultModal").classList.remove("on");swipe(1)};
 $("rStats").onclick=()=>{$("resultModal").classList.remove("on");go("stats")};
+
+
+/* ================= YAPAY ZEKÂ (Worker) ================= */
+const AI_URL="https://speakdeck-ai.kerimcanbilir87.workers.dev";
+function deviceId(){try{let d=localStorage.getItem("speakdeck.device");if(!d){d=(crypto.randomUUID?crypto.randomUUID():String(Math.random()).slice(2)+Date.now());localStorage.setItem("speakdeck.device",d)}return d}catch(e){return "anon-"+Date.now()}}
+let energy=null,energyMax=5;
+function showEnergy(){document.querySelectorAll(".eN").forEach(e=>e.textContent=energy==null?"–":energy+"/"+energyMax);
+  const b=$("aiBtn");if(b&&!aiBusy){b.disabled=energy===0;b.innerHTML=energy===0?"⚡ Bugünlük enerjin bitti — yarın 5 yeni":"✨ Yapay zekâ ile detaylı değerlendir <small>(⚡1)</small>"}}
+async function fetchEnergy(){try{const r=await fetch(`${AI_URL}/energy?d=${encodeURIComponent(deviceId())}`);if(!r.ok)throw 0;const j=await r.json();energy=j.energy;energyMax=j.max}catch(e){energy=null}showEnergy()}
+function speak(t){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang="en-US";u.rate=.95;speechSynthesis.speak(u)}catch(e){toast("Sesli okuma desteklenmiyor")}}
+function wordDiff(a,b){const A=a.match(/\S+/g)||[],B=b.match(/\S+/g)||[],n=s=>s.toLowerCase().replace(/[^a-z0-9']/g,"");
+  const dp=Array.from({length:A.length+1},()=>new Array(B.length+1).fill(0));
+  for(let i=A.length-1;i>=0;i--)for(let j=B.length-1;j>=0;j--)dp[i][j]=n(A[i])===n(B[j])?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);
+  let i=0,j=0,o=[];while(i<A.length&&j<B.length){if(n(A[i])===n(B[j])){o.push(esc(B[j]));i++;j++}else if(dp[i+1][j]>=dp[i][j+1])o.push(`<del>${esc(A[i++])}</del>`);else o.push(`<ins>${esc(B[j++])}</ins>`)}
+  while(i<A.length)o.push(`<del>${esc(A[i++])}</del>`);while(j<B.length)o.push(`<ins>${esc(B[j++])}</ins>`);return o.join(" ")}
+let aiBusy=false,lastAI=null;
+function resetAI(){lastAI=null;$("aiOut").innerHTML="";$("aiBtn").style.display="";showEnergy()}
+async function runAI(){
+  if(aiBusy)return;const answer=lastAnswer;if(!answer){toast("Önce cevap ver 🙂");return}
+  aiBusy=true;const btn=$("aiBtn");btn.style.display="none";
+  $("aiOut").innerHTML='<div class="aiLoad"><i></i>Gemma cevabını inceliyor…</div>';
+  const idx=order[pos%order.length],c=CARDS[idx];
+  let r,j;
+  try{r=await fetch(`${AI_URL}/evaluate`,{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({device:deviceId(),situation:c[1],goal:c[2],checks:(CHECKS[idx]||[]).map(x=>x[0]),answer,fromSpeech:!!lastFromSpeech})});
+    j=await r.json()}catch(e){r=null}
+  aiBusy=false;
+  if(!r||!r.ok){const code=j&&j.error;if(j&&typeof j.energy==="number"){energy=j.energy;energyMax=j.max||energyMax}
+    const msg={no_energy:"⚡ Bugünlük yapay zekâ enerjin bitti. Yarın 5 yeni enerjiyle dönersin! Bu arada aşağıdan Claude'a da sorabilirsin.",
+      ip_limit:"Bu ağdan bugün çok fazla istek geldi. Biraz sonra tekrar dene.",ai_unavailable:"Yapay zekâ şu an meşgul. Enerjin düşmedi, birazdan tekrar dene.",
+      too_short:"Cevap çok kısa, en az 5 İngilizce kelime gerekli."}[code]||"Bağlantı kurulamadı (internet?). Enerjin düşmedi.";
+    $("aiOut").innerHTML=`<div class="aiErr">${msg}</div>`;if(code!=="no_energy"){btn.style.display=""}showEnergy();return}
+  energy=j.energy;energyMax=j.max;showEnergy();lastAI=j.result;renderAI(j.result,answer);
+}
+async function renderAI(R,answer){
+  const out=$("aiOut");out.innerHTML="";
+  const sec=(title,html)=>{const d=document.createElement("div");d.className="aiSec";d.innerHTML=(title?`<h4>${title}</h4>`:"")+html;out.appendChild(d);return d};
+  const parts=[];
+  parts.push(sec("",`<div class="row" style="justify-content:space-between"><b class="px">✨ Yapay zekâ geri bildirimi</b><span class="lvl" title="Tahmini seviye">${esc(R.level)}</span></div>`));
+  if(R.minimal_correction)parts.push(sec("DÜZELTİLMİŞ HÂLİN",`<div class="aiCard diff">${wordDiff(answer,R.minimal_correction)}</div>`));
+  if(R.errors.length)parts.push(sec(`HATALAR (${R.errors.length})`,R.errors.map(e=>`<div class="aiCard"><span class="diff"><del>${esc(e.wrong)}</del> → <ins>${esc(e.right)}</ins></span><div class="sub">${esc(e.why_tr)}</div></div>`).join("")));
+  else parts.push(sec("HATALAR",`<div class="aiCard gd">✨ Dilbilgisi hatası bulunamadı!</div>`));
+  if(R.maybe_misheard.length)parts.push(sec("🔊 YANLIŞ DUYULMUŞ OLABİLİR",R.maybe_misheard.map(m=>`<div class="aiCard">"${esc(m.heard)}" → muhtemelen <b>"${esc(m.probably)}"</b> <button class="say" data-say="${esc(m.probably)}">🔊</button><div class="sub">${esc(m.tip_tr)}</div></div>`).join("")));
+  if(R.goal.length)parts.push(sec("🎯 HEDEF",R.goal.map(g=>{const k={done:["✅","gd"],partial:["🟡","gp"],missing:["❌","gm"]}[g.status];return `<div class="aiCard"><span class="${k[1]}">${k[0]} ${esc(g.item)}</span>${g.note_tr?`<div class="sub">${esc(g.note_tr)}</div>`:""}</div>`}).join("")));
+  if(R.missing_tr)parts.push(sec("💡 EN ÖNEMLİ EKSİK",`<div class="aiCard">${esc(R.missing_tr)}</div>`));
+  if(R.native_version)parts.push(sec("🗣️ NATIVE NASIL SÖYLER",`<div class="aiCard">${esc(R.native_version)} <button class="say" data-say="${esc(R.native_version)}">🔊</button></div>`));
+  if(R.phrases.length)parts.push(sec("📌 KALIPLAR",R.phrases.map(p=>`<div class="aiCard">${esc(p.en)} <button class="say" data-say="${esc(p.en)}">🔊</button><div class="sub">${esc(p.tr)}</div></div>`).join("")));
+  if(R.encouragement_tr)parts.push(sec("",`<div class="aiCard" style="text-align:center">${esc(R.encouragement_tr)}</div>`));
+  for(const p of parts){await sleep(40);p.classList.add("in");await sleep(150)}
+}
+$("aiOut").addEventListener("click",e=>{const b=e.target.closest("[data-say]");if(b)speak(b.dataset.say)});
+$("aiBtn").onclick=runAI;
 
 /* ================= İSTATİSTİK SAYFASI ================= */
 function avg(a){a=a.filter(v=>v!=null);return a.length?a.reduce((x,y)=>x+y,0)/a.length:null}
@@ -917,7 +993,7 @@ if(br&&br.type==="broken"){$("brokeTitle").textContent="Serin bozuldu 💔";
   $("brokeText").textContent=`${br.missed} gün kart çekmedin, ${br.lost} günlük serin sıfırlandı. Bugün bir kart çek, yeniden başlasın!`;$("brokeModal").classList.add("on")}
 else if(br&&br.type==="frozen"){toast(`🧊 ${br.missed} dondurucu kullanıldı, serin kurtuldu!`)}
 $("brokeOk").onclick=()=>$("brokeModal").classList.remove("on");
-shuffle();route();
+shuffle();route();fetchEnergy();
 </script>
 </body>
 </html>
