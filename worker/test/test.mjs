@@ -19,7 +19,7 @@ function makeEnv({ geminiMode = "ok", aiMode = "ok", key = "k" } = {}) {
   globalThis.fetch = async (url, opts) => {
     assert.ok(String(url).includes("generativelanguage.googleapis.com"));
     assert.equal(opts.headers["x-goog-api-key"], "k");
-    if (geminiMode === "http500") return { ok: false, status: 500, json: async () => ({}) };
+    if (geminiMode === "http500") return { ok: false, status: 500, json: async () => ({}), text: async () => "err" };
     if (geminiMode === "garbage") return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: "sorry I can't" }] } }] }) };
     return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: "```json\n" + JSON.stringify(GOOD) + "\n```" }] } }] }) };
   };
@@ -117,6 +117,26 @@ await t("normalize: bilinmeyen alanlar temizlenir", async () => {
   globalThis.fetch = async () => ({ ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: JSON.stringify({ minimal_correction: "x", errors: [{ wrong: "a", right: "b", type: "weird" }], goal: [{ item: "i", status: "??" }], level: "Z9" }) }] } }] }) });
   const j = await (await worker.fetch(req("/evaluate", { method: "POST", body: evalBody() }), env)).json();
   assert.equal(j.result.errors[0].type, "other"); assert.equal(j.result.goal[0].status, "partial"); assert.equal(j.result.level, "B1");
+});
+await t("Gemini 404 → model adını bulur, KV'ye kaydeder, tekrar dener", async () => {
+  const env = makeEnv(); const calls = [];
+  globalThis.fetch = async (url, opts) => {
+    calls.push(String(url));
+    if (String(url).includes("/models?")) return { ok: true, json: async () => ({ models: [
+      { name: "models/gemini-3.5-flash", supportedGenerationMethods: ["generateContent"] },
+      { name: "models/gemma-4-26b-it", supportedGenerationMethods: ["generateContent"] } ] }) };
+    if (String(url).includes("gemma-4-26b-a4b-it")) return { ok: false, status: 404, text: async () => "not found" };
+    return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: "thinking...", thought: true }, { text: JSON.stringify(GOOD) }] } }] }) };
+  };
+  const j = await (await worker.fetch(req("/evaluate", { method: "POST", body: evalBody() }), env)).json();
+  assert.equal(j.provider, "gemini"); assert.equal(env._store.get("cfg:gemini_model"), "gemma-4-26b-it");
+  assert.ok(calls.some(c => c.includes("gemma-4-26b-it:generateContent")));
+});
+await t("/health iki sağlayıcıyı da raporlar", async () => {
+  const env = makeEnv({ geminiMode: "http500" });
+  globalThis.fetch = async () => ({ ok: false, status: 403, text: async () => "API key not valid" });
+  const j = await (await worker.fetch(req("/health"), env)).json();
+  assert.equal(j.gemini.ok, false); assert.ok(j.gemini.error.includes("403")); assert.equal(j.workers_ai.ok, true); assert.equal(j.kv_binding, true);
 });
 await t("404 bilinmeyen yol", async () => {
   assert.equal((await worker.fetch(req("/nope"), makeEnv())).status, 404);

@@ -97,7 +97,7 @@ LEARNER ANSWER:
 /* ------------------------------------------------------------------ */
 function extractJson(text) {
   if (text && typeof text === "object") return text;
-  const s = String(text || "").replace(/```(?:json)?/gi, "");
+  const s = String(text || "").replace(/<think>[\s\S]*?<\/think>/gi, "").replace(/```(?:json)?/gi, "");
   const a = s.indexOf("{"), b = s.lastIndexOf("}");
   if (a < 0 || b <= a) throw new Error("no_json");
   return JSON.parse(s.slice(a, b + 1));
@@ -135,38 +135,65 @@ function normalize(o) {
 /* ------------------------------------------------------------------ */
 /* Sağlayıcılar                                                         */
 /* ------------------------------------------------------------------ */
-async function callGemini(env, prompt) {
-  if (!env.GEMINI_KEY) throw new Error("no_gemini_key");
-  const model = cfg(env, "GEMINI_MODEL");
+async function geminiRequest(env, model, prompt, maxTokens) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
   const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 25000);
   try {
-    const r = await fetch(url, {
+    return await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_KEY },
       body: JSON.stringify({
         contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.2, maxOutputTokens: 1200 },
+        generationConfig: { temperature: 0.2, maxOutputTokens: maxTokens },
       }),
       signal: ctl.signal,
     });
-    if (!r.ok) throw new Error("gemini_http_" + r.status);
-    const j = await r.json();
-    const text = (j.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("");
-    return normalize(extractJson(text));
   } finally { clearTimeout(t); }
 }
 
-async function callWorkersAI(env, prompt) {
+// Model adı yanlışsa (404) hesabın erişebildiği Gemma 4 modelini bulur ve KV'de saklar
+async function discoverGeminiModel(env) {
+  const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200", { headers: { "x-goog-api-key": env.GEMINI_KEY } });
+  if (!r.ok) throw new Error("gemini_list_http_" + r.status);
+  const names = ((await r.json()).models || [])
+    .filter(m => (m.supportedGenerationMethods || []).includes("generateContent"))
+    .map(m => String(m.name).replace(/^models\//, ""));
+  const pick = names.find(n => /gemma-4/.test(n) && /26b/.test(n)) || names.find(n => /gemma-4/.test(n)) || names.find(n => /gemma/.test(n));
+  if (!pick) throw new Error("gemini_no_gemma_model");
+  await env.KV.put("cfg:gemini_model", pick);
+  return pick;
+}
+
+async function geminiText(env, prompt, maxTokens = 2048) {
+  if (!env.GEMINI_KEY) throw new Error("no_gemini_key");
+  let model = (await env.KV.get("cfg:gemini_model")) || cfg(env, "GEMINI_MODEL");
+  let r = await geminiRequest(env, model, prompt, maxTokens);
+  if (r.status === 404) { model = await discoverGeminiModel(env); r = await geminiRequest(env, model, prompt, maxTokens); }
+  if (!r.ok) throw new Error(`gemini_http_${r.status}:${(await r.text()).slice(0, 160)}`);
+  const j = await r.json();
+  const parts = j.candidates?.[0]?.content?.parts || [];
+  const text = parts.filter(p => !p.thought).map(p => p.text || "").join("");
+  if (!text) throw new Error("gemini_empty:" + (j.candidates?.[0]?.finishReason || j.promptFeedback?.blockReason || "?"));
+  return { text, model };
+}
+
+async function callGemini(env, prompt) {
+  const { text } = await geminiText(env, prompt);
+  return normalize(extractJson(text));
+}
+
+async function workersAIText(env, prompt, maxTokens = 2048) {
   if (!env.AI) throw new Error("no_ai_binding");
-  const res = await env.AI.run(cfg(env, "CF_MODEL"), {
-    messages: [{ role: "user", content: prompt }],
-    response_format: { type: "json_object" },
-    temperature: 0.2,
-    max_tokens: 1200,
-  });
+  const base = { messages: [{ role: "user", content: prompt }], temperature: 0.2, max_tokens: maxTokens };
+  let res;
+  try { res = await env.AI.run(cfg(env, "CF_MODEL"), { ...base, response_format: { type: "json_object" } }); }
+  catch (e) { res = await env.AI.run(cfg(env, "CF_MODEL"), base); }
   const payload = res?.response ?? res?.choices?.[0]?.message?.content ?? res;
-  return normalize(extractJson(payload));
+  return typeof payload === "string" ? payload : JSON.stringify(payload);
+}
+
+async function callWorkersAI(env, prompt) {
+  return normalize(extractJson(await workersAIText(env, prompt)));
 }
 
 /* ------------------------------------------------------------------ */
@@ -216,6 +243,21 @@ async function handleEvaluate(request, env, headers) {
   return json({ result, provider, energy: Math.max(0, max - nUsed), max }, 200, headers);
 }
 
+
+async function handleHealth(request, env, headers) {
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  if ((await incCount(env, `diag:${ip}:${today()}`)) > 10) return json({ error: "diag_limit" }, 429, headers);
+  const prompt = 'Return ONLY this JSON: {"ok":true,"say":"hello"}';
+  const out = { gemini_key_set: !!env.GEMINI_KEY, ai_binding: !!env.AI, kv_binding: !!env.KV };
+  const t0 = Date.now();
+  try { const { text, model } = await geminiText(env, prompt, 256); out.gemini = { ok: true, model, ms: Date.now() - t0, sample: text.slice(0, 80) }; }
+  catch (e) { out.gemini = { ok: false, error: String(e.message).slice(0, 220) }; }
+  const t1 = Date.now();
+  try { const text = await workersAIText(env, prompt, 256); out.workers_ai = { ok: true, model: cfg(env, "CF_MODEL"), ms: Date.now() - t1, sample: text.slice(0, 80) }; }
+  catch (e) { out.workers_ai = { ok: false, error: String(e.message).slice(0, 220) }; }
+  return json(out, 200, headers);
+}
+
 export default {
   async fetch(request, env) {
     const headers = corsHeaders(request, env);
@@ -224,6 +266,7 @@ export default {
     try {
       if (url.pathname === "/energy" && request.method === "GET") return await handleEnergy(url, env, headers);
       if (url.pathname === "/evaluate" && request.method === "POST") return await handleEvaluate(request, env, headers);
+      if (url.pathname === "/health" && request.method === "GET") return await handleHealth(request, env, headers);
       if (url.pathname === "/" ) return json({ ok: true, service: "speakdeck-ai" }, 200, headers);
       return json({ error: "not_found" }, 404, headers);
     } catch (e) {
