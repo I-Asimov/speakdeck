@@ -1112,7 +1112,15 @@ function cardHTML(i,cls){const [c,sit,goal,hints,d]=CARDS[i];const [col,emo]=MET
       <div class="tapHint" style="margin-top:auto">önce kendin dene 😉 · dokun → geri</div></div></div></div></div>`}
 function renderDeck(){const n=order.length,ix=k=>order[(pos+k)%n];
   $("deck").innerHTML=(n>2?cardHTML(ix(2),"b2"):"")+(n>1?cardHTML(ix(1),"b1"):"")+cardHTML(ix(0),"top enter");
-  bindDrag($("deck").querySelector(".card.top"));resetRound()}
+  bindDrag($("deck").querySelector(".card.top"));resetRound();fitCards()}
+function fitFace(f){const over=()=>f.scrollHeight>f.clientHeight+1;if(!over())return;
+  const hide=[".emoji",".tapHint"];for(const h of hide){const e=f.querySelector(h);if(e&&over())e.style.display="none"}
+  const els=[...f.querySelectorAll(".sit,.xtra,.goalBox,.h")];
+  for(let k=0;k<12&&over();k++)els.forEach(e=>{e.style.fontSize=Math.max(11,parseFloat(getComputedStyle(e).fontSize)*.93)+"px"});
+  if(over())f.style.gap="6px"}
+function fitCards(){requestAnimationFrame(()=>document.querySelectorAll("#deck .face").forEach(f=>{
+  f.style.gap="";f.querySelectorAll(".emoji,.tapHint,.sit,.xtra,.goalBox,.h").forEach(e=>{e.style.display="";e.style.fontSize=""});fitFace(f)}))}
+addEventListener("resize",()=>{clearTimeout(fitCards.t);fitCards.t=setTimeout(fitCards,150)});
 function bindDrag(el){let sx=0,sy=0,dx=0,down=false,moved=false,horiz=null;
   el.onpointerdown=e=>{down=true;moved=false;horiz=null;sx=e.clientX;sy=e.clientY;dx=0;el.style.transition="none"};
   el.onpointermove=e=>{if(!down)return;const mx=e.clientX-sx,my=e.clientY-sy;
