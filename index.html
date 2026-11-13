@@ -244,6 +244,11 @@ textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line)
   .gd{color:var(--green)}.gp{color:var(--orange)}.gm{color:#ff8f86}
   .aiErr{font-weight:800;color:#ffd1cc;background:#3a1d22;border:2px solid #000;border-radius:12px;padding:10px}
 
+
+  .catBtn{position:relative}
+  .catGrid{flex-wrap:wrap;overflow:visible;justify-content:center;gap:10px;padding:4px 0}
+  .catGrid .chip{font-size:15px;padding:10px 14px}
+
 /* ---- GENİŞ EKRAN ---- */
 @media (min-width:900px){
   #landing .wrap{max-width:980px;display:grid;grid-template-columns:1.1fr 1fr;grid-template-areas:"top top" "hero stats" "hero side";grid-template-rows:auto auto 1fr;gap:22px 34px;align-items:start}
@@ -384,6 +389,7 @@ textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line)
   <div class="wrap">
     <div class="hud">
       <button class="iconbtn" id="home" aria-label="Ana ekran">🏠</button>
+      <button class="iconbtn catBtn" id="catBtn" aria-label="Kategori seç"><span id="catIc">🃏</span></button>
       <div class="grow">
         <div class="row" style="justify-content:space-between;font-weight:900;font-size:13px;margin-bottom:4px">
           <span class="px">Sv. <span id="hLvl">1</span></span><span>⚡ <span class="eN">–</span> · 🔥 <span id="hStreak">0</span> · 🎯 <span id="hToday">0</span>/<span id="hGoal">3</span></span>
@@ -391,7 +397,6 @@ textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line)
         <div class="xpmini"><i id="hXp"></i></div>
       </div>
     </div>
-    <div class="chips" id="chips"></div>
     <div class="deck" id="deck"></div>
     <div class="status" id="status">Kaydır ↔ · Dokun = ipucu · 🎙️ = başla</div>
     <div class="controls">
@@ -435,6 +440,12 @@ textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line)
   </div>
   <div class="row"><button class="btn" id="rStats" style="flex:1">📈</button><button class="btn y px" id="rCopy" style="flex:4">📋 Claude'a düzelttir</button></div>
   <button class="btn g px" id="rNext">Sonraki kart ▸</button>
+</div></div>
+
+<div class="modal" id="catModal"><div class="panel">
+  <h3 class="px" style="margin:0">🗂️ Kategori seç</h3>
+  <div class="chips catGrid" id="chips"></div>
+  <button class="btn" id="catClose">Kapat</button>
 </div></div>
 
 <div class="modal" id="settingsModal"><div class="panel">
@@ -682,7 +693,11 @@ $("resetAll").onclick=()=>{const b=$("resetAll");if(b.dataset.sure){localStorage
 /* ================= PLAY: DESTE ================= */
 let cat="Hepsi",order=[],pos=0,hist=[],completed=false;
 $("chips").innerHTML=["Hepsi",...CATS].map(c=>`<button class="chip ${c==="Hepsi"?"on":""}" data-c="${c}">${META[c]?META[c][1]+" ":""}${c}</button>`).join("");
-$("chips").onclick=e=>{const b=e.target.closest(".chip");if(!b)return;cat=b.dataset.c;document.querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x===b));shuffle()};
+$("chips").onclick=e=>{const b=e.target.closest(".chip");if(!b)return;cat=b.dataset.c;document.querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x===b));
+  $("catIc").textContent=META[cat]?META[cat][1]:"🃏";$("catModal").classList.remove("on");shuffle();toast(cat==="Hepsi"?"Tüm kategoriler":cat)};
+$("catBtn").onclick=()=>$("catModal").classList.add("on");
+$("catClose").onclick=()=>$("catModal").classList.remove("on");
+$("catModal").onclick=e=>{if(e.target.id==="catModal")$("catModal").classList.remove("on")};
 function shuffle(){order=CARDS.map((c,i)=>i).filter(i=>cat==="Hepsi"||CARDS[i][0]===cat);
   for(let i=order.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]]}pos=0;hist=[];renderDeck()}
 function cur(){return CARDS[order[pos%order.length]]}
