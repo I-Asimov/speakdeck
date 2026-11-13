@@ -202,9 +202,10 @@ async function handleEvaluate(request, env, headers) {
   const prompt = buildPrompt({ situation, goal, checks, answer, fromSpeech: !!fromSpeech });
 
   let result = null, provider = null; const tried = [];
-  for (const [name, fn] of [["gemini", callGemini], ["workers-ai", callWorkersAI]]) {
-    try { result = await fn(env, prompt); provider = name; break; }
-    catch (e) { tried.push(`${name}:${e.message}`); }
+  const providers = [{ name: "gemini", run: callGemini }, { name: "workers-ai", run: callWorkersAI }];
+  for (const p of providers) {
+    try { result = await p.run(env, prompt); provider = p.name; break; }
+    catch (e) { tried.push(`${p.name}:${e.message}`); }
   }
   if (!result) {
     console.log(JSON.stringify({ event: "all_providers_failed", tried }));
