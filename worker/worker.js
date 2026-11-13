@@ -236,7 +236,7 @@ async function handleEvaluate(request, env, headers) {
   }
   if (!result) {
     console.log(JSON.stringify({ event: "all_providers_failed", tried }));
-    return json({ error: "ai_unavailable", energy: max - used, max }, 503, headers); // enerji düşmez
+    return json({ error: "ai_unavailable", tried, energy: max - used, max }, 503, headers); // enerji düşmez
   }
 
   const [nUsed] = await Promise.all([incCount(env, devKey), incCount(env, ipKey)]);
@@ -255,6 +255,16 @@ async function handleHealth(request, env, headers) {
   const t1 = Date.now();
   try { const text = await workersAIText(env, prompt, 256); out.workers_ai = { ok: true, model: cfg(env, "CF_MODEL"), ms: Date.now() - t1, sample: text.slice(0, 80) }; }
   catch (e) { out.workers_ai = { ok: false, error: String(e.message).slice(0, 220) }; }
+  if (new URL(request.url).searchParams.get("eval") === "1") {
+    const ep = buildPrompt({ situation: "İnternetten verdiğin sipariş 2 haftadır gelmedi, müşteri hizmetlerini aradın.",
+      goal: "Sorunu anlat, ne zaman geleceğini sor.", checks: ["Siparişten bahsettin", "Ne zaman geleceğini sordun"],
+      answer: "hi my order didn't came for two weeks can you check what is going on", fromSpeech: true });
+    for (const [name, fn] of [["gemini_eval", async () => (await geminiText(env, ep)).text], ["workers_ai_eval", () => workersAIText(env, ep)]]) {
+      const t = Date.now(); let raw = "";
+      try { raw = await fn(); normalize(extractJson(raw)); out[name] = { ok: true, ms: Date.now() - t }; }
+      catch (e) { out[name] = { ok: false, ms: Date.now() - t, error: String(e.message).slice(0, 200), raw_start: String(raw).slice(0, 300), raw_end: String(raw).slice(-200) }; }
+    }
+  }
   return json(out, 200, headers);
 }
 
