@@ -292,13 +292,31 @@ textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line)
   .accPick button{font-size:28px;aspect-ratio:1;border-radius:14px;border:2px solid #000;background:#1d1a33;cursor:pointer}
   .accPick button.on{background:var(--yellow)}
 
+/* ---- ALT MENÜ ---- */
+  .navPage{padding-bottom:calc(var(--safe-b) + 96px)}
+  .bnav{position:fixed;z-index:30;left:50%;transform:translateX(-50%);bottom:calc(var(--safe-b) + 10px);width:calc(100% - 20px);max-width:560px;display:none;grid-template-columns:repeat(5,1fr);gap:4px;padding:6px;background:var(--glass);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:3px solid #000;border-radius:22px;box-shadow:0 5px 0 #000}
+  .bnav.on{display:grid}
+  .bnav button{border:0;background:none;color:var(--muted);font-weight:900;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;border-radius:15px;transition:background .15s,color .15s}
+  .bnav .ni{font-size:21px;line-height:1.1;filter:grayscale(.6);opacity:.75;transition:transform .2s}
+  .bnav button.on{background:var(--glass2);color:var(--yellow);box-shadow:inset 0 0 0 2px #000}
+  .bnav button.on .ni{filter:none;opacity:1;transform:translateY(-2px) scale(1.08)}
+  .pgT{margin:4px 0 0;font-size:28px;text-shadow:3px 3px 0 #000}
+  .navPage .backRow .iconbtn{display:none}
+  #landing .wrap{justify-content:flex-start}
+  #landing .heroCol{flex:1;display:flex;flex-direction:column;justify-content:center;gap:12px;padding-bottom:10px}
+  .todayStrip{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .tchip{border:3px solid #000;background:var(--glass);color:var(--text);border-radius:20px;padding:8px 14px;font-weight:800;font-size:14px;box-shadow:0 3px 0 #000}
+  .tchip b{color:var(--yellow)}
+  .tchip.warn{background:#3a1d22;color:#ffd1cc}
+  .lsMsg{text-align:center;font-weight:800;font-size:13.5px;color:var(--muted);min-height:1em}
+  .lsMsg.warn{color:#ffb4ae}
+  .frzRow{display:flex;gap:14px;align-items:center}
+  .frzIc{width:52px;height:52px;flex:none;border-radius:14px;border:3px solid #000;background:#bfe6ff;display:grid;place-items:center;font-size:28px;box-shadow:0 3px 0 #000}
+  .totTiles .v{font-size:24px}
+
 /* ---- GENİŞ EKRAN ---- */
 @media (min-width:900px){
-  #landing .wrap{max-width:980px;display:grid;grid-template-columns:1.1fr 1fr;grid-template-areas:"top top" "hero stats" "hero side";grid-template-rows:auto auto 1fr;gap:22px 34px;align-items:start}
-  #landing .topbar{grid-area:top}
-  #landing .topStats{grid-area:stats}
-  #landing .heroCol{grid-area:hero;position:sticky;top:30px}
-  #landing .sideCol{grid-area:side;display:flex;flex-direction:column;gap:16px}
+  #landing .wrap{max-width:560px}
   .fan{height:260px}
   #play .wrap{max-width:520px}
 }
@@ -310,34 +328,24 @@ textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line)
 </head>
 <body>
 <canvas id="bg"></canvas><div class="crt"></div>
+<nav class="bnav" id="bnav">
+  <button data-go=""><span class="ni">🏠</span>Ana sayfa</button>
+  <button data-go="progress"><span class="ni">🔥</span>İlerleme</button>
+  <button data-go="achievements"><span class="ni">🏅</span>Başarımlar</button>
+  <button data-go="stats"><span class="ni">📈</span>İstatistik</button>
+  <button data-go="account"><span class="ni" id="avTop">🦊</span>Hesabım</button>
+</nav>
 
 <!-- ===== LANDING ===== -->
-<section class="screen" id="landing">
+<section class="screen navPage" id="landing">
   <div class="wrap">
     <div class="topbar">
       <span class="pill px" id="lvlPill">⭐ Sv. 1</span>
       <div class="row">
         <span class="pill" title="Yapay zekâ enerjisi">⚡ <span class="eN">–</span></span>
-        <span class="pill" title="Seri dondurucu">🧊 <span id="freezeN">0</span></span>
-        <button class="iconbtn avatarBtn" id="openAccount" aria-label="Hesabım"><span id="avTop">🦊</span></button>
         <button class="iconbtn" id="openSettings" aria-label="Ayarlar">⚙️</button>
       </div>
     </div>
-
-      <div class="stats topStats">
-        <div class="panel goal">
-          <div class="lbl">BUGÜNKÜ HEDEF</div>
-          <div class="big2 px"><span id="todayN">0</span>/<span id="goalN">3</span> kart</div>
-          <div class="bar"><i id="goalBar"></i></div>
-        </div>
-        <div class="panel lvl">
-          <div class="lbl">SEVİYE <span id="lvlN2">1</span></div>
-          <div class="big2 px"><span id="xpIn">0</span>/<span id="xpNeed">100</span> XP</div>
-          <div class="bar"><i id="xpBar"></i></div>
-        </div>
-      </div>
-
-
     <div class="heroCol">
       <div class="hero">
         <div class="logo px">Speak<span>Deck</span></div>
@@ -346,45 +354,59 @@ textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line)
         <div class="fan"><div class="mini">✈️</div><div class="mini">☕</div><div class="mini">💼</div></div>
       </div>
       <button class="btn y big px" id="startBtn" style="width:100%;margin-top:6px">▶ BAŞLA</button>
-    </div>
-
-    <div class="sideCol">
-      <div class="panel">
-        <div class="streakCard">
-          <div class="flame" id="flame">🔥</div>
-          <div>
-            <div class="streakNum px"><span id="streakN">0</span> günlük seri</div>
-            <div class="streakMsg" id="streakMsg">İlk kartını çek, serin başlasın!</div>
-          </div>
-        </div>
-        <div class="week" id="week"></div>
+      <div class="todayStrip">
+        <button class="tchip" data-go="progress"><span id="tsFlame">🔥</span> <b id="tsStreak">0</b> gün seri</button>
+        <button class="tchip" data-go="progress">🎯 Bugün <b id="tsGoal">0/3</b></button>
       </div>
-
-      <button class="panel achLink" id="openAch">
-        <div class="row" style="justify-content:space-between;width:100%">
-          <div class="lbl">🏅 BAŞARIMLAR</div><div class="lbl"><span id="badgeN">0</span>/<span id="badgeT">0</span> ▸</div>
-        </div>
-        <div class="achPeek" id="achPeek"></div>
-        <div class="achNext" id="achNext"></div>
-      </button>
-
-      <button class="panel achLink" id="openStats">
-        <div class="row" style="justify-content:space-between;width:100%"><div class="lbl">📈 İSTATİSTİKLER</div><div class="lbl">▸</div></div>
-        <div class="miniStats" id="miniStats"></div>
-      </button>
-
-      <div class="panel muted" style="font-size:13px;font-weight:700">
-        Toplam: <b id="totCards">0</b> kart · <b id="totWords">0</b> kelime · En uzun seri: <b id="bestStreak">0</b> gün
-      </div>
+      <div class="lsMsg" id="lsMsg"></div>
     </div>
   </div>
 </section>
 
+<!-- ===== İLERLEME ===== -->
+<section class="screen navPage" id="progress">
+  <div class="wrap">
+    <h2 class="pgT px">İlerleme</h2>
+    <div class="panel">
+      <div class="streakCard">
+        <div class="flame" id="flame">🔥</div>
+        <div>
+          <div class="streakNum px"><span id="streakN">0</span> günlük seri</div>
+          <div class="streakMsg" id="streakMsg">İlk kartını çek, serin başlasın!</div>
+        </div>
+      </div>
+      <div class="week" id="week"></div>
+    </div>
+    <div class="stats topStats">
+      <div class="panel goal">
+        <div class="lbl">BUGÜNKÜ HEDEF</div>
+        <div class="big2 px"><span id="todayN">0</span>/<span id="goalN">3</span> kart</div>
+        <div class="bar"><i id="goalBar"></i></div>
+      </div>
+      <div class="panel lvl">
+        <div class="lbl">SEVİYE <span id="lvlN2">1</span></div>
+        <div class="big2 px"><span id="xpIn">0</span>/<span id="xpNeed">100</span> XP</div>
+        <div class="bar"><i id="xpBar"></i></div>
+      </div>
+    </div>
+    <div class="panel frzRow">
+      <div class="frzIc">🧊</div>
+      <div><div style="font-weight:900"><span id="freezeN">0</span> seri dondurucu</div>
+      <div class="muted" style="font-size:12.5px;font-weight:700">Bir gün kaçırırsan serini otomatik kurtarır. 7 günlük seride 1 tane kazanırsın (en fazla 2).</div></div>
+    </div>
+    <div class="tiles big totTiles">
+      <div class="tile in"><div class="v px" id="totCards">0</div><div class="k">TOPLAM KART</div></div>
+      <div class="tile in"><div class="v px" id="totWords">0</div><div class="k">TOPLAM KELİME</div></div>
+      <div class="tile in"><div class="v px" id="bestStreak">0</div><div class="k">EN UZUN SERİ</div></div>
+      <div class="tile in"><div class="v px" id="totXp">0</div><div class="k">TOPLAM XP</div></div>
+    </div>
+  </div>
+</section>
 
 <!-- ===== BAŞARIMLAR ===== -->
-<section class="screen" id="achievements">
+<section class="screen navPage" id="achievements">
   <div class="wrap">
-    <div class="row">
+    <div class="row backRow">
       <button class="iconbtn" id="achBack" aria-label="Geri">←</button>
       <h2 class="px" style="margin:0;font-size:26px;text-shadow:3px 3px 0 #000">Başarımlar</h2>
     </div>
@@ -403,9 +425,9 @@ textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line)
 
 
 <!-- ===== HESABIM ===== -->
-<section class="screen" id="account">
+<section class="screen navPage" id="account">
   <div class="wrap">
-    <div class="row">
+    <div class="row backRow">
       <button class="iconbtn" id="accBack" aria-label="Geri">←</button>
       <h2 class="px" style="margin:0;font-size:26px;text-shadow:3px 3px 0 #000">Hesabım</h2>
     </div>
@@ -435,9 +457,9 @@ textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line)
 </section>
 
 <!-- ===== İSTATİSTİK ===== -->
-<section class="screen" id="stats">
+<section class="screen navPage" id="stats">
   <div class="wrap">
-    <div class="row">
+    <div class="row backRow">
       <button class="iconbtn" id="stBack" aria-label="Geri">←</button>
       <h2 class="px" style="margin:0;font-size:26px;text-shadow:3px 3px 0 #000">İstatistikler</h2>
     </div>
@@ -740,9 +762,11 @@ function checkBadges(){const n=[];BADGES.forEach(([id,ic,name,desc,f])=>{const [
 
 /* ================= EKRAN YÖNETİMİ ================= */
 function show(id){document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("on",s.id===id));window.scrollTo(0,0);
-  if(id==="landing")renderLanding(); if(id==="play")renderHud(); if(id==="onboard")requestAnimationFrame(obDots); if(id==="achievements")renderAch(); if(id==="stats")renderStats(); if(id==="account")renderAccount();}
+  if(id==="landing"||id==="progress")renderLanding();
+  const nav=["landing","progress","achievements","stats","account"];$("bnav").classList.toggle("on",nav.includes(id));
+  [...$("bnav").children].forEach(b=>b.classList.toggle("on",(b.dataset.go||"landing")===id)); if(id==="play")renderHud(); if(id==="onboard")requestAnimationFrame(obDots); if(id==="achievements")renderAch(); if(id==="stats")renderStats(); if(id==="account")renderAccount();}
 function route(){const h=location.hash.slice(1);
-  if(h==="play")show("play"); else if(h==="intro")show("onboard"); else if(h==="achievements")show("achievements"); else if(h==="stats")show("stats"); else if(h==="account")show("account"); else show("landing")}
+  if(h==="play")show("play"); else if(h==="intro")show("onboard"); else if(h==="achievements")show("achievements"); else if(h==="stats")show("stats"); else if(h==="account")show("account"); else if(h==="progress")show("progress"); else show("landing")}
 addEventListener("hashchange",route);
 function go(h){if(location.hash.slice(1)===h)route();else location.hash=h}
 
@@ -751,7 +775,8 @@ function toast(t){$("toast").textContent=t;$("toast").classList.add("show");clea
 /* ================= LANDING ================= */
 function renderLanding(){
   const t=today(), done=S.days[t]||0, li=levelInfo(S.xp);
-  $("streakN").textContent=S.streak; $("freezeN").textContent=S.freezes;
+  $("streakN").textContent=S.streak; $("freezeN").textContent=S.freezes; $("totXp").textContent=S.xp;
+  $("tsStreak").textContent=S.streak; $("tsGoal").textContent=`${Math.min(done,S.goal)}/${S.goal}`;
   $("lvlPill").textContent="⭐ Sv. "+li.l; $("lvlN2").textContent=li.l;
   $("xpIn").textContent=li.inLvl; $("xpNeed").textContent=li.need;
   setTimeout(()=>{$("xpBar").style.width=(li.inLvl/li.need*100)+"%";$("goalBar").style.width=Math.min(100,done/S.goal*100)+"%"},60);
@@ -763,6 +788,9 @@ function renderLanding(){
   else if(done>0){msg.textContent=`Seri bugün için güvende ✅ Hedefe ${S.goal-done} kart kaldı.`}
   else if(S.streak>0){msg.textContent=`⚠️ Bugün kart yapmazsan ${S.streak} günlük serin bozulur!`;msg.className="streakMsg warn"}
   else msg.textContent="İlk kartını çek, serin başlasın!";
+  $("lsMsg").textContent=msg.textContent;$("lsMsg").className="lsMsg"+(msg.classList.contains("warn")?" warn":"");
+  document.querySelector('.tchip[data-go="progress"]').classList.toggle("warn",msg.classList.contains("warn"));
+  $("tsFlame").style.filter=done>0||S.streak>0?"":"grayscale(1)";
   // hafta şeridi
   const names=["Pz","Pt","Sa","Ça","Pe","Cu","Ct"]; let h="";
   for(let i=6;i>=0;i--){const d=addDays(t,-i);const [y,m,dd]=d.split("-").map(Number);const wd=new Date(y,m-1,dd).getDay();
@@ -770,18 +798,12 @@ function renderLanding(){
     h+=`<div class="day ${cls}">${names[wd]}<div class="dot">${S.days[d]?"🔥":S.frozenDays.includes(d)?"🧊":""}</div></div>`}
   $("week").innerHTML=h;
   checkBadges();
-  const got=BADGES.filter(b=>S.badges.includes(b[0])), lock=BADGES.filter(b=>!S.badges.includes(b[0]));
-  $("achPeek").innerHTML=got.slice(-5).map(b=>`<span title="${b[2]}">${b[1]}</span>`).join("")+lock.slice(0,Math.max(0,5-got.length)).map(b=>`<span class="lock">${b[1]}</span>`).join("");
-  const nx=lock.map(b=>{const [c,t]=b[4](S);return [b,Math.min(1,c/t),c,t]}).sort((a,b)=>b[1]-a[1])[0];
-  $("achNext").textContent=nx?`Sıradaki: ${nx[0][1]} ${nx[0][2]} — ${Math.min(nx[2],nx[3])}/${nx[3]}`:"Hepsini açtın! 🎉";
-  $("badgeN").textContent=S.badges.length; $("badgeT").textContent=BADGES.length;
-  {const ss=S.sessions||[],w7=ss.filter(x=>diffDays(x.d,today())<7),a=k=>{const v=avg(w7.map(x=>x[k]));return v==null?"—":Math.round(v)};
-   $("miniStats").innerHTML=ss.length?`<span>Ort. puan <b>${a("sc")}</b></span><span>Kelime/dk <b>${a("wpm")}</b></span><span>Çeşitlilik <b>${a("uniq")}${a("uniq")==="—"?"":"%"}</b></span>`:"Kart tamamladıkça gelişimin burada görünecek";}
   $("totCards").textContent=S.totalCards; $("totWords").textContent=S.totalWords; $("bestStreak").textContent=S.best;
   $("startBtn").textContent=S.totalCards?"▶ DEVAM ET":"▶ BAŞLA";syncAvatar();
   $("hello").textContent=S.name?`Selam ${S.name} ${S.avatar}`:"";
 }
 $("startBtn").onclick=()=>go(S.onboarded?"play":"intro");
+document.addEventListener("click",e=>{const b=e.target.closest("[data-go]");if(!b)return;const h=b.dataset.go;if(h)go(h);else{if(location.hash)history.pushState("",document.title,location.pathname+location.search);route()}});
 
 
 /* ================= BAŞARIMLAR SAYFASI ================= */
@@ -799,7 +821,7 @@ function renderAch(){
       <div class="pb"><i style="width:${cc/t*100}%"></i></div><div class="pv">${g?"✓ AÇILDI":cc+" / "+t}</div></div></div>`}).join("")||'<div class="muted" style="font-weight:700;text-align:center;padding:20px">Burada henüz bir şey yok.</div>';
 }
 $("achTabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;achFilter=b.dataset.f;[...$("achTabs").children].forEach(x=>x.classList.toggle("on",x===b));renderAch()};
-$("openAch").onclick=()=>go("achievements");
+
 $("achBack").onclick=()=>history.length>1?history.back():go("landing");
 
 
@@ -815,7 +837,7 @@ function renderAccount(){
   $("accDev").textContent=deviceId().slice(0,8)+"…";$("accImportBox").style.display="none";
 }
 function syncAvatar(){$("avTop").textContent=S.avatar}
-$("openAccount").onclick=()=>go("account");
+
 $("accBack").onclick=()=>history.length>1?history.back():go("landing");
 $("accAvatar").onclick=()=>{$("accPick").hidden=!$("accPick").hidden};
 $("accPick").onclick=e=>{const b=e.target.closest("[data-a]");if(!b)return;S.avatar=b.dataset.a;save();syncAvatar();$("accPick").hidden=true;renderAccount()};
@@ -1178,7 +1200,7 @@ function renderStats(){
     ln.style.transition=`stroke-dashoffset 1.2s ${i*.15}s cubic-bezier(.3,.8,.3,1)`;ln.style.strokeDashoffset=0;c.classList.add("go")}));
 }
 $("stBack").onclick=()=>history.length>1?history.back():go("landing");
-$("openStats").onclick=()=>go("stats");
+
 
 /* ================= CLAUDE'A KOPYALA ================= */
 function copyPrompt(){const a=((finalText+" "+$("manual").value).trim())||lastAnswer,c=cur();if(!a){toast("Önce cevap ver 🙂");return}
