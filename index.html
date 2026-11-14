@@ -177,6 +177,17 @@ textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line)
 .modal.on{display:flex;animation:fadeIn .25s}
 .modal .panel{width:100%;max-width:400px;text-align:center;display:flex;flex-direction:column;gap:12px;max-height:90dvh;overflow:auto}
 .reward{font-size:clamp(40px,12vw,56px);color:var(--yellow);text-shadow:4px 4px 0 #000;animation:pop .5s cubic-bezier(.2,1.6,.4,1)}
+.audList{display:flex;flex-direction:column;gap:6px}
+.audList .ar{display:flex;align-items:center;gap:8px;font-weight:800;font-size:12.5px}
+.audList .ar span{flex:none;width:74px;text-align:left;color:var(--muted)}
+.audList audio{flex:1;min-width:0;height:36px}
+.retryHint{border:2px solid #000;border-radius:14px;background:rgba(245,217,78,.14);padding:8px 10px;font-weight:800;font-size:13px;display:flex;flex-direction:column;gap:6px;text-align:left}
+.retryHint[hidden]{display:none}
+.retryHint .rhTop{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.retryHint .rhTop b{color:var(--yellow)}
+.retryHint button{border:2px solid #000;border-radius:10px;background:var(--glass2);color:var(--text);font-weight:800;font-size:12px;padding:4px 8px;flex:none}
+.retryHint .rhBody{font-weight:700;font-size:13px;line-height:1.4;color:#e9e6f7;max-height:22dvh;overflow:auto}
+.retryHint .rhBody[hidden]{display:none}
 .rlist{display:flex;flex-direction:column;gap:6px;text-align:left}
 .rlist div{background:#1d1a33;border:2px solid #000;border-radius:12px;padding:8px 12px;font-weight:800;font-size:14px}
 .set{display:flex;justify-content:space-between;align-items:center;gap:10px;font-weight:800;text-align:left}
@@ -556,6 +567,7 @@ textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line)
       <button class="iconbtn" id="next" aria-label="Sonraki">⏭</button>
     </div>
     <div class="sheet">
+    <div class="retryHint" id="retryHint" hidden></div>
     <div class="subs empty" id="subs"><span class="subLbl">🎙️ ALTYAZI</span><span class="wc"><span id="wc">0</span> kelime</span><div id="live"></div></div>
       <textarea id="manual" placeholder="Mikrofon yoksa buraya yaz…"></textarea>
       <div class="row">
@@ -578,6 +590,7 @@ textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line)
   <div class="sec" id="secGoal"><div class="lbl">🎯 HEDEF</div><div class="chk" id="chkList"></div></div>
   <div class="sec" id="secGram"><div class="lbl">📝 DİLBİLGİSİ</div><div id="gramList" class="gram"><div class="muted">Kontrol ediliyor…</div></div></div>
   <div class="sec"><div class="lbl">🗣️ AKICILIK</div><div class="tiles" id="tiles"></div></div>
+  <div class="sec" id="secAudio" style="display:none"><div class="lbl">🎧 KENDİNİ DİNLE</div><div class="audList" id="audList"></div></div>
   <div class="reward px" id="rXp">+0 XP</div>
   <div class="rlist" id="rList"></div>
   <div class="aiBox" id="aiBox">
@@ -585,6 +598,7 @@ textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line)
     <div id="aiOut"></div>
   </div>
   <div class="row"><button class="btn" id="rStats" style="flex:1">📈</button><button class="btn y px" id="rCopy" style="flex:4">📋 Claude'a düzelttir</button></div>
+  <button class="btn px" id="rRetry">🔁 Tekrar dene · daha iyisini söyle</button>
   <button class="btn g px" id="rNext">Sonraki kart ▸</button>
 </div></div>
 
@@ -616,6 +630,7 @@ textarea{display:none;width:100%;background:#120f22;border:2px solid var(--line)
   <div class="set">Günlük hedef <div class="seg" id="segGoal"><button data-v="1">1</button><button data-v="3">3</button><button data-v="5">5</button></div></div>
   <div class="set">Konuşma süresi <div class="seg" id="segDur"><button data-v="30">30s</button><button data-v="60">60s</button><button data-v="90">90s</button></div></div>
   <div class="set">Düşünme süresi <div class="seg" id="segPrep"><button data-v="0">Yok</button><button data-v="15">15s</button><button data-v="30">30s</button></div></div>
+  <div class="set">Sesimi kaydet <div class="seg" id="segRec"><button data-v="1">Açık</button><button data-v="0">Kapalı</button></div></div>
   <button class="btn" id="replayOb">Tanıtımı tekrar göster</button>
   <button class="btn" id="resetAll" style="color:var(--red)">İlerlemeyi sıfırla</button>
   <button class="btn y" id="closeSettings">Kapat</button>
@@ -894,7 +909,7 @@ function genCard(opts={}){
 
 /* ================= KAYIT (localStorage) ================= */
 const KEY="speakdeck.v2";
-const DEF={xp:0,streak:0,best:0,lastDay:null,freezes:0,days:{},frozenDays:[],badges:[],totalCards:0,totalWords:0,catsDone:[],goal:3,dur:60,prep:15,onboarded:false,maxWords:0,sessions:[],name:"",avatar:"🦊",createdAt:null,cardBest:{},filter:{cats:[],diff:[],fresh:false},mode:"classic",run:null,bestAnte:0,actStats:{},gh:null};
+const DEF={xp:0,streak:0,best:0,lastDay:null,freezes:0,days:{},frozenDays:[],badges:[],totalCards:0,totalWords:0,catsDone:[],goal:3,dur:60,prep:15,onboarded:false,maxWords:0,sessions:[],name:"",avatar:"🦊",createdAt:null,cardBest:{},filter:{cats:[],diff:[],fresh:false},mode:"classic",run:null,bestAnte:0,actStats:{},gh:null,retries:0,recAudio:/Android/i.test(navigator.userAgent)?0:1};
 let S;
 function load(){const d=JSON.parse(JSON.stringify(DEF));try{S=Object.assign(d,JSON.parse(localStorage.getItem(KEY)||"{}"))}catch(e){S=d}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
@@ -1064,7 +1079,7 @@ $("skipOb").onclick=finishOb;
 /* ================= AYARLAR ================= */
 function seg(id,key){const el=$(id);const upd=()=>[...el.children].forEach(b=>b.classList.toggle("on",+b.dataset.v===S[key]));
   el.onclick=e=>{const b=e.target.closest("button");if(!b)return;S[key]=+b.dataset.v;save();upd();renderLanding();renderHud()};upd()}
-$("openSettings").onclick=()=>{seg("segGoal","goal");seg("segDur","dur");seg("segPrep","prep");$("settingsModal").classList.add("on")};
+$("openSettings").onclick=()=>{seg("segGoal","goal");seg("segDur","dur");seg("segPrep","prep");seg("segRec","recAudio");$("settingsModal").classList.add("on")};
 $("closeSettings").onclick=()=>$("settingsModal").classList.remove("on");
 $("replayOb").onclick=()=>{$("settingsModal").classList.remove("on");slides.scrollLeft=0;go("intro")};
 $("resetAll").onclick=()=>{const b=$("resetAll");if(b.dataset.sure){localStorage.removeItem(KEY);load();save();b.dataset.sure="";b.textContent="İlerlemeyi sıfırla";$("settingsModal").classList.remove("on");renderLanding();toast("Sıfırlandı")}
@@ -1110,7 +1125,8 @@ function cardHTML(i,cls){const [c,sit,goal,hints,d]=CARDS[i];const [col,emo]=MET
       <div class="sit">${sit}</div>`}<div class="goalBox">🎯 ${goal}</div><div class="tapHint">dokun → ipucu kalıplar</div></div>
     <div class="face back"><h3 class="px">💡 İşine yarayabilecek kalıplar</h3>${hints.map(h=>`<div class="h">${h}</div>`).join("")}
       <div class="tapHint" style="margin-top:auto">önce kendin dene 😉 · dokun → geri</div></div></div></div></div>`}
-function renderDeck(){const n=order.length,ix=k=>order[(pos+k)%n];
+function renderDeck(){if(retryCtx){if(retryCtx.audio)URL.revokeObjectURL(retryCtx.audio);retryCtx=null}$("retryHint").hidden=true;clearAudio();
+  const n=order.length,ix=k=>order[(pos+k)%n];
   $("deck").innerHTML=(n>2?cardHTML(ix(2),"b2"):"")+(n>1?cardHTML(ix(1),"b1"):"")+cardHTML(ix(0),"top enter");
   bindDrag($("deck").querySelector(".card.top"));resetRound();fitCards()}
 function fitFace(f){const over=()=>f.scrollHeight>f.clientHeight+1;if(!over())return;
@@ -1171,11 +1187,28 @@ function run(sec,col,label,end){total=left=sec;clearInterval(timer);
   timer=setInterval(()=>{left--;u();if(left<=0){clearInterval(timer);end()}},1000)}
 function startPrep(){if(!S.prep)return startSpeak();phase="prep";setMicIcon("skip");run(S.prep,"#F5D94E","🧠 Düşün…",startSpeak)}
 let speakT0=0,speakSecs=0;
-function startSpeak(){speakT0=performance.now();speakSecs=0;phase="speak";$("mic").classList.add("live");setMicIcon("stop");startMic();run(effDur(),"#E0605A","🎙️ Konuş!",endSpeak)}
+/* ---- ses kaydı (kendini dinle) ---- */
+let mr=null,lastAudioUrl=null,retryCtx=null,curRetry=null;
+async function startAudio(){if(!S.recAudio||!navigator.mediaDevices||!window.MediaRecorder)return;
+  try{const st=await navigator.mediaDevices.getUserMedia({audio:true});
+    if(phase!=="speak"){st.getTracks().forEach(t=>t.stop());return}
+    const chunks=[],my=new MediaRecorder(st);mr=my;
+    my.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+    my.onstop=()=>{st.getTracks().forEach(t=>t.stop());if(!chunks.length)return;
+      clearAudio();lastAudioUrl=URL.createObjectURL(new Blob(chunks,{type:my.mimeType}));showAudio()};
+    my.start()}catch(e){}}
+function stopAudio(){if(mr&&mr.state!=="inactive")try{mr.stop()}catch(e){}mr=null}
+function clearAudio(){if(lastAudioUrl){URL.revokeObjectURL(lastAudioUrl);lastAudioUrl=null}}
+function showAudio(){const rows=[];
+  if(curRetry&&curRetry.audio)rows.push([`${curRetry.n-1}. deneme`,curRetry.audio]);
+  if(lastAudioUrl)rows.push([curRetry?`${curRetry.n}. deneme`:"Senin sesin",lastAudioUrl]);
+  $("secAudio").style.display=rows.length?"":"none";
+  $("audList").innerHTML=rows.map(([l,u])=>`<div class="ar"><span>${l}</span><audio controls preload="metadata" src="${u}"></audio></div>`).join("")}
+function startSpeak(){speakT0=performance.now();speakSecs=0;phase="speak";$("mic").classList.add("live");setMicIcon("stop");startMic();startAudio();run(effDur(),"#E0605A","🎙️ Konuş!",endSpeak)}
 function effDur(){let d=S.dur;if(S.mode==="run"&&S.run)for(const id of S.run.jokers){const j=JOKERS.find(x=>x[0]===id);if(j&&j[6]&&j[6].dur)d=Math.min(d,j[6].dur)}return d}
 function endSpeak(){stopAll();if(words()>=5)complete();else{$("status").innerHTML="Biraz daha konuşmalısın (en az 5 kelime) 🙂";ring(0,"#F5D94E")}}
-function stopAll(){if(phase==="speak"&&speakT0)speakSecs+=(performance.now()-speakT0)/1000;speakT0=0;clearInterval(timer);phase="idle";listening=false;if(rec)try{rec.stop()}catch(e){}$("mic").classList.remove("live");setMicIcon("mic");document.querySelector(".micWrap").classList.remove("speaking")}
-$("mic").onclick=()=>{if(phase==="idle"){if(completed){toast("Bu kart bitti — sonrakine geç ⏭");return}finalText="";$("live").innerHTML="";subsN=0;updWc();startPrep()}
+function stopAll(){if(phase==="speak"&&speakT0)speakSecs+=(performance.now()-speakT0)/1000;speakT0=0;clearInterval(timer);phase="idle";listening=false;stopAudio();if(rec)try{rec.stop()}catch(e){}$("mic").classList.remove("live");setMicIcon("mic");document.querySelector(".micWrap").classList.remove("speaking")}
+$("mic").onclick=()=>{if(phase==="idle"){if(completed){toast("Bu kart bitti — sonrakine geç ⏭");return}clearAudio();finalText="";$("live").innerHTML="";subsN=0;updWc();startPrep()}
   else if(phase==="prep"){clearInterval(timer);startSpeak()} else endSpeak()};
 function startMic(){if(!SR){toast("Mikrofon desteklenmiyor — ⌨️ ile yaz");return}
   rec=new SR();rec.lang="en-US";rec.interimResults=true;rec.continuous=true;
@@ -1242,6 +1275,9 @@ async function complete(){
   completed=true;updWc();
   const text=(finalText+" "+$("manual").value).trim();lastAnswer=text;lastFromSpeech=!!finalText.trim();resetAI();
   const idx=order[pos%order.length], m=metrics(text,speakSecs), chk=runChecks(idx,text);
+  if(curRetry&&curRetry.audio&&curRetry!==retryCtx)URL.revokeObjectURL(curRetry.audio);
+  curRetry=retryCtx&&retryCtx.idx===idx?retryCtx:null;retryCtx=null;$("retryHint").hidden=true;const rt=curRetry;
+  if(!lastFromSpeech)clearAudio();showAudio();$("rRetry").disabled=true;$("rRetry").style.display=S.mode==="run"?"none":"";
   // modal: başlangıç durumu
   $("scN").textContent="0";$("scFg").style.transition="none";$("scFg").style.strokeDashoffset=326.7;
   [...$("stars").children].forEach(x=>x.classList.remove("on"));$("scLbl").textContent="Değerlendiriliyor…";
@@ -1280,15 +1316,22 @@ async function complete(){
 
   // 5) XP + seri + rozet
   const before=levelInfo(S.xp).l, lines=[];
-  let xp=5+Math.round(sc/5);
-  const first=registerDay();
+  let xp=rt?(sc>rt.rule?3+Math.min(12,Math.round((sc-rt.rule)/3)):2):5+Math.round(sc/5);
+  const first=rt?false:registerDay();
   if(first){xp+=5;lines.push(S.streak>1?`🔥 Seri devam: ${S.streak} gün! (+5 XP)`:`🔥 Seri başladı: 1 gün! (+5 XP)`)}
-  if(S.days[today()]===S.goal){xp+=20;lines.push("🎯 Günlük hedef tamam! +20 XP")}
+  if(!rt&&S.days[today()]===S.goal){xp+=20;lines.push("🎯 Günlük hedef tamam! +20 XP")}
   if(S._newFreeze){lines.push("🧊 7 günlük seri ödülü: 1 dondurucu kazandın!");delete S._newFreeze}
-  S.xp+=xp;S.totalCards++;S.totalWords+=m.words;S.maxWords=Math.max(S.maxWords,m.words);
+  S.xp+=xp;if(!rt)S.totalCards++;S.totalWords+=m.words;S.maxWords=Math.max(S.maxWords,m.words);
   if(!S.catsDone.includes(cur()[0]))S.catsDone.push(cur()[0]);
-  S.sessions.push({d:today(),sc,wpm:m.wpm,uniq:m.uniq,fill:m.fill,len:m.avgLen,w:m.words,g:gram==null?null:gram.length});
-  lastEval={m,sc,gram,idx,prevBest:S.cardBest[idx],session:S.sessions[S.sessions.length-1]};
+  const sesNew={d:today(),sc,wpm:m.wpm,uniq:m.uniq,fill:m.fill,len:m.avgLen,w:m.words,g:gram==null?null:gram.length};
+  let ses=null;
+  if(rt){const ls=S.sessions[S.sessions.length-1],d=sc-rt.rule;if(ls&&sc>ls.sc){Object.assign(ls,sesNew);ses=ls}
+    S.retries=(S.retries||0)+1;
+    lines.push(`🔁 ${rt.ai!=null?"Otomatik puan: ":""}${rt.n-1}. deneme ${rt.rule} → ${rt.n}. deneme ${sc}${d>0?` · +${d} puan 📈`:d<0?` · ${d} puan`:" · aynı puan"}`);
+    if(rt.ai!=null)lines.push(`✨ İlk denemenin yapay zekâ puanı ${rt.ai} idi. Bu denemeyi de ✨ ile değerlendirirsen ikisi karşılaştırılır.`);
+    if(rt.missed.length){const now=chk.filter(c=>c[1]).map(c=>c[0]),fixed=rt.missed.filter(x=>now.includes(x));if(fixed.length)lines.push("✅ Bu sefer tamamladın: "+fixed.join(", "))}}
+  else{S.sessions.push(sesNew);ses=sesNew}
+  lastEval={m,sc,rule:sc,ai:null,gram,idx,prevBest:S.cardBest[idx],session:ses,missed:chk.filter(c=>!c[1]).map(c=>c[0])};
   if(idx<BASE_N)S.cardBest[idx]=Math.max(S.cardBest[idx]??0,sc);
   if(GEN[idx]){const a=GEN[idx].act,o=S.actStats[a];S.actStats[a]=o==null?sc:Math.round(o*.7+sc*.3)}
   if(S.mode==="run"&&S.run){const t=" "+text.toLowerCase().replace(/[’]/g,"'")+" ";let mult=1;
@@ -1303,9 +1346,20 @@ async function complete(){
   save();renderHud();
   await countUp($("rXp"),xp,700);$("rXp").textContent=`+${xp} XP`;
   for(const l of lines){const d=document.createElement("div");d.textContent=l;$("rList").appendChild(d);await sleep(120)}
-  $("rNext").disabled=false;
-  if(first||after>before||stars===3)confetti();
+  $("rNext").disabled=false;$("rRetry").disabled=false;
+  if(first||after>before||stars===3||(rt&&sc>rt.rule))confetti();
 }
+$("rRetry").onclick=()=>{if(!lastEval)return;const n=(curRetry?curRetry.n:1)+1;
+  if(curRetry&&curRetry.audio)URL.revokeObjectURL(curRetry.audio);
+  retryCtx={idx:lastEval.idx,rule:lastEval.rule,ai:lastEval.ai,n,audio:lastAudioUrl,missed:lastEval.missed,fix:lastAI&&lastAI.minimal_correction||"",nat:lastAI&&lastAI.native_version||""};
+  lastAudioUrl=null;curRetry=null;try{speechSynthesis.cancel()}catch(e){}
+  $("resultModal").classList.remove("on");resetRound();$("manual").style.display="none";
+  $("status").innerHTML=`🔁 ${n}. deneme · 🎙️'a bas, daha iyisini söyle`;
+  const h=$("retryHint"),r=retryCtx,body=r.fix?`<div><b style="color:var(--green)">Düzeltilmiş hâlin:</b> ${esc(r.fix)}</div>${r.nat?`<div style="margin-top:4px"><b style="color:#9fd0ff">Doğal hâli:</b> ${esc(r.nat)}</div>`:""}`
+    :r.missed.length?`<div><b style="color:#ffb4ae">İlk denemede eksik kalanlar:</b> ${r.missed.map(esc).join(", ")}</div>`:`<div>Hedefi tam tutturmuştun. Bu sefer daha akıcı ve daha zengin söylemeyi dene.</div>`;
+  h.innerHTML=`<div class="rhTop"><span>🔁 ${n}. deneme · ilk puanın <b>${r.ai??r.rule}</b></span><span>${r.fix?'<button id="rhSay">🔊</button> ':""}<button id="rhTog">👁 ipucu</button></span></div><div class="rhBody" id="rhBody" hidden>${body}</div>`;
+  h.hidden=false;$("rhTog").onclick=()=>{$("rhBody").hidden=!$("rhBody").hidden};
+  if(r.fix)$("rhSay").onclick=()=>speak(r.fix)};
 $("rNext").onclick=()=>{$("resultModal").classList.remove("on");
   if(S.mode==="run"&&S.run&&S.run.n>=3){resolveAnte();return}swipe(1,true)};
 /* ================= JOKER KOŞUSU ================= */
@@ -1403,6 +1457,9 @@ function applyAI(R){
   const goalS=R.goal.length?R.goal.reduce((a,g)=>a+({done:1,partial:.5,missing:0}[g.status]),0)/R.goal.length:null;
   const gramS=Math.max(0,1-n/Math.max(1,m.words/10));
   const old=lastEval.sc,sc=combine(goalS==null?1:goalS,gramS,fluencyScore(m)),stars=starsFor(sc);
+  lastEval.ai=sc;
+  if(curRetry&&curRetry.ai!=null){const d=sc-curRetry.ai,el=document.createElement("div");
+    el.textContent=`✨ Yapay zekâ puanı: ${curRetry.n-1}. deneme ${curRetry.ai} → ${curRetry.n}. deneme ${sc}${d>0?` · +${d} 📈`:""}`;$("rList").appendChild(el)}
   if(sc===old)return;
   lastEval.sc=sc;if(lastEval.session){lastEval.session.sc=sc;lastEval.session.ai=1}
   if(lastEval.idx!=null)S.cardBest[lastEval.idx]=Math.max(lastEval.prevBest??0,sc);save();
